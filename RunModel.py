@@ -12,7 +12,7 @@ class Model:
         self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
                        'Head2_L', 'Head2_R', 'Head2_C', 'Tail2', 'Rod2']
         self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachMay7shuffle1_650000.h5'
-        self.FRAME_RATE = 30
+        self.FRAME_RATE = 10
         # Image petri diameter = 188px
         # Real petri diameter = 94mm
         self.SIZE_RATIO = 2
