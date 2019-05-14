@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageSequence
 
+
 class Model:
     def __init__(self, conf_file, save_dir, approach_radius):
         self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
@@ -166,7 +167,7 @@ class Model:
         print(f'\tTimes approaching rod with right side:\t{right_dict["right_approach"]}')
 
 
-    def analyze_video(self, tif_file, del_video=True):
+    def analyze_video(self, tif_file, del_video=True, del_results=True):
         vid_file = self._format_tif(tif_file)
         deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=self.save_dir, save_as_csv=False)
 
@@ -178,6 +179,9 @@ class Model:
 
         if del_video:
             os.remove(vid_file)
+        if del_results:
+            os.remove(result_file)
+        os.remove(result_file.replace('.h5', 'includingmetadata.pickle'))
 
 
 if __name__ == '__main__':
