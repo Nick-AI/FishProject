@@ -68,7 +68,16 @@ class Model:
         else:
             return 0
 
-    def _get_metrics(self, frame_lbls):
+    def _get_metrics(self, frame_lbls, save_dir):
+        out_df = pd.DataFrame(columns=['frame_idx',
+                                       'l_in_radius', 'l_left_approaches', 'l_right_approaches', 'l_in_time',
+                                       'l_out_time', 'l_left_time', 'l_right_time',
+                                       'l_left_head', 'l_right_head', 'l_center_head', 'l_rod',
+                                       'r_in_radius', 'r_left_approaches', 'r_right_approaches', 'r_in_time',
+                                       'r_out_time', 'r_left_time', 'r_right_time',
+                                       'r_left_head', 'r_right_head', 'r_center_head', 'r_rod'])
+        no_detect = [-1, -1]
+
         left_in_radius = False
         left_fish = {'in_time': 0,
                      'out_time': 0,
@@ -86,7 +95,8 @@ class Model:
                      'right_approach': 0}
 
 
-        for frame in frame_lbls.values[:]:
+        for idx, frame in enumerate(frame_lbls.values[:]):
+            row = [idx]
             # labels: HL 0:3, HR 3:6, HC 6:9, T 9:12, R 12:15
             petri1 = frame[:15]
             petri2 = frame[15:]
@@ -118,6 +128,26 @@ class Model:
                         left_in_radius = True
                     else:
                         left_fish['out_time'] += 1
+                row.append(int(left_in_radius))
+                row.append(left_fish['left_approach'])
+                row.append(left_fish['right_approach'])
+                row.append(left_fish['in_time'])
+                row.append(left_fish['out_time'])
+                row.append(left_fish['facing_left'])
+                row.append(left_fish['facing_right'])
+                row.append(petri1[0:2])
+                row.append(petri1[3:5])
+                row.append(petri1[6:8])
+                row.append(petri1[12:14])
+            else:
+                row.append(-1)
+                row.append(left_fish['left_approach'])
+                row.append(left_fish['right_approach'])
+                row.append(left_fish['in_time'])
+                row.append(left_fish['out_time'])
+                row.append(left_fish['facing_left'])
+                row.append(left_fish['facing_right'])
+                row += [no_detect]*4
 
             # if any labels are missing, frame will be disregarded
             if np.min(petri2) > self.CONF_THRESHOLD:
@@ -128,7 +158,7 @@ class Model:
 
                 # fish was in radius in previous frame
                 if right_in_radius:
-                    if self._approach_side(petri1) == 0:
+                    if self._approach_side(petri2) == 0:
                         right_in_radius = False
                         right_fish['out_time'] += 1
                     else:
@@ -136,20 +166,41 @@ class Model:
 
                 # fish wasn't in radius in previous frame
                 else:
-                    if self._approach_side(petri1) == 1:
+                    if self._approach_side(petri2) == 1:
                         right_fish['left_approach'] += 1
                         right_fish['in_time'] += 1
                         right_in_radius = True
-                    elif self._approach_side(petri1) == -1:
+                    elif self._approach_side(petri2) == -1:
                         right_fish['right_approach'] += 1
                         right_fish['in_time'] += 1
                         right_in_radius = True
                     else:
                         right_fish['out_time'] += 1
+                row.append(int(right_in_radius))
+                row.append(right_fish['left_approach'])
+                row.append(right_fish['right_approach'])
+                row.append(right_fish['in_time'])
+                row.append(right_fish['out_time'])
+                row.append(right_fish['facing_left'])
+                row.append(right_fish['facing_right'])
+                row.append(petri2[0:2])
+                row.append(petri2[3:5])
+                row.append(petri2[6:8])
+                row.append(petri2[12:14])
+            else:
+                row.append(-1)
+                row.append(right_fish['left_approach'])
+                row.append(right_fish['right_approach'])
+                row.append(right_fish['in_time'])
+                row.append(right_fish['out_time'])
+                row.append(right_fish['facing_left'])
+                row.append(right_fish['facing_right'])
+                row += [no_detect] * 4
+            out_df.loc[idx] = np.array(row)
+        out_df.to_csv(save_dir + 'approach_results.csv')
         return left_fish, right_fish
 
-    def _print_results(self, left_dict, right_dict):
-
+    def _quick_results(self, left_dict, right_dict):
         print('Left Petri Dish:')
         print(f'\tTime spent in radius:\t\t\t{left_dict["in_time"]/self.FRAME_RATE}')
         print(f'\tTime spent outside of radius:\t\t{left_dict["out_time"]/self.FRAME_RATE}')
@@ -184,8 +235,8 @@ class Model:
         result_file = result_dir + ''.join(os.path.basename(tif_file).split('.')[:-1]) + self.RESULT_POSTFIX
         results = pd.read_hdf(result_file, 'df_with_missing')
 
-        left_results, right_results = self._get_metrics(results)
-        self._print_results(left_results, right_results)
+        left_results, right_results = self._get_metrics(results, result_dir)
+        self._quick_results(left_results, right_results)
 
         if del_video:
             os.remove(vid_file)
