@@ -5,14 +5,15 @@ Project analyzing videos of cave fish approaching vibrating rod in a petri dish 
 - After installing all dependencies, change the DeepLabCut/FishApproach-Nick-2019-05-07/config.yaml file as follows:
     - Line 7: change the project_path to the absolute path to FishProject/DeepLabCutModel/FishApproach-Nick-2019-05-07/
 - Then you can run the model:
-    - call `python RunModel.py [radius] -s [dir]`
+    - call `python RunModel.py [radius] -s [destination dir] -v [video dir]`
     - replace [radius] with the radius around the rod in mm that you want to count as an approach
-    - replace dir with the location where results will be stored (you don't have to specify this argument, it will default to your current working directory
+    - replace [destination dir] with the location where results will be stored (you don't have to specify this argument, 
+    it will default to your current working directory, however, it is recommended, especially for batches of videos
     - you can call `python RunModel.py -h` for help
-- It will prompt you to enter the path to a tif video that you want to analyze
-    - For now only one video at a time is supported
-    - Results cannot yet be stored to a file but will just be printed out
-- To quit, press Ctrl+C
+- To analyze batches of videos, you need to have all of them in a folder (not containing anything else) and specify that
+folder in the -v flag
+- If you don't specify the -v flag you will be prompted to enter the path to a tif video that you want to analyze
+    - To quit, press Ctrl+C
 
 ## Dependencies
 - Python3.6
@@ -20,3 +21,4 @@ Project analyzing videos of cave fish approaching vibrating rod in a petri dish 
 - wxPython
 - tensorflow
 - numpy==1.16.3
+- pandas==0.21.0
