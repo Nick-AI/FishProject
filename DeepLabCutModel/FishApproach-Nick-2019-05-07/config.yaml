@@ -22,8 +22,8 @@ stop: 1
 numframes2pick: 5
 
 # Plotting configuration
-pcutoff: 0.1
-dotsize: 12
+pcutoff: 0.15
+dotsize: 3
 alphavalue: 0.7
 colormap: jet
 

@@ -8,7 +8,7 @@ from PIL import Image, ImageSequence
 
 
 class Model:
-    def __init__(self, conf_file, save_dir, approach_radius):
+    def __init__(self, conf_file, save_dir, approach_radius, video_folder):
         self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
                        'Head2_L', 'Head2_R', 'Head2_C', 'Tail2', 'Rod2']
         self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachMay7shuffle1_650000.h5'
@@ -22,9 +22,9 @@ class Model:
         self.approach_radius = approach_radius
 
 
-    def _format_tif(self, tif_file):
+    def _format_tif(self, tif_file, dest_folder):
         im_stack = Image.open(tif_file)
-        vid_name = self.save_dir + '/' + str(os.path.basename(tif_file).split('.')[0]) + '.mp4'
+        vid_name = dest_folder + '/' + ''.join(os.path.basename(tif_file).split('.')[:-1]) + '.mp4'
         for idx, img in enumerate(ImageSequence.Iterator(im_stack)):
             test = img
             img_data = np.array(test)
@@ -168,10 +168,16 @@ class Model:
 
 
     def analyze_video(self, tif_file, del_video=True, del_results=True):
-        vid_file = self._format_tif(tif_file)
-        deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=self.save_dir, save_as_csv=False)
+        result_dir = self.save_dir + '/' + ''.join(os.path.basename(tif_file).split('.')[:-1]) + '/'
+        try:
+            os.mkdir(result_dir)
+        except:
+            pass
+        vid_file = self._format_tif(tif_file, result_dir)
+        deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
+        deeplabcut.create_labeled_video(self.conf, [vid_file], destfolder=result_dir)
 
-        result_file = self.save_dir + '/' + str(os.path.basename(vid_file).split('.')[0]) + self.RESULT_POSTFIX
+        result_file = result_dir + ''.join(os.path.basename(tif_file).split('.')[:-1]) + self.RESULT_POSTFIX
         results = pd.read_hdf(result_file, 'df_with_missing')
 
         left_results, right_results = self._get_metrics(results)
@@ -194,7 +200,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--save_dir', '-s', type=str, required=False, default='./',
+        '--video_folder', '-v', type=str, required=False, default=None,
+        help='Folder containing videos to be analyzed. If not specified, user will be prompted for individual videos'
+    )
+
+    parser.add_argument(
+        '--save_dir', '-s', type=str, required=False, default=os.getcwd(),
         help='Directory where results will be stored (default is current directory)'
     )
 
@@ -207,9 +218,9 @@ if __name__ == '__main__':
     usr_args = vars(parser.parse_args())
 
     model = Model(**usr_args)
-
-    while True:
-        vid_path = input('Enter video path or press Ctrl+C to quit:')
-        # E:\FishProject\OrigVids\drive-download-20190503T090214Z-010\Pa67_102610_152.153.tif
-        # E:\FishProject\OrigVids\drive-download-20190503T090214Z-010\Pa67_102610_154.155.tif
-        model.analyze_video(vid_path)
+    if usr_args['video_folder']:
+        for vid_path in [f for f in os.listdir(usr_args['video_folder'])]:
+            model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
+    else:
+        while True:
+            vid_path = input('Enter video path or press Ctrl+C to quit:')
