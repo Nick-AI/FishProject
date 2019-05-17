@@ -174,7 +174,11 @@ class Model:
         except:
             pass
         vid_file = self._format_tif(tif_file, result_dir)
-        deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
+        try:
+            deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
+        except:
+            import pdb
+            pdb.set_trace()
         deeplabcut.create_labeled_video(self.conf, [vid_file], destfolder=result_dir)
 
         result_file = result_dir + ''.join(os.path.basename(tif_file).split('.')[:-1]) + self.RESULT_POSTFIX
@@ -211,7 +215,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--conf_file', '-c', type=str, required=False,
-        default='./DeepLabCutModel/FishApproach-Nick-2019-05-07/config.yaml',
+        default=os.getcwd() + '/DeepLabCutModel/FishApproach-Nick-2019-05-07/config.yaml',
         help='Config file, it is recommended to leave this unchanged for now'
     )
 
@@ -224,3 +228,4 @@ if __name__ == '__main__':
     else:
         while True:
             vid_path = input('Enter video path or press Ctrl+C to quit:')
+            model.analyze_video(vid_path)
