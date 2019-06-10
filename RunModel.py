@@ -1,9 +1,9 @@
 import os
-import cv2
 import argparse
 import deeplabcut
 import numpy as np
 import pandas as pd
+from skvideo.io import FFmpegWriter
 from PIL import Image, ImageSequence
 
 
@@ -17,6 +17,7 @@ class Model:
         # Real petri diameter = 94mm
         self.SIZE_RATIO = 2
         self.CONF_THRESHOLD = 0.15
+        self.FOURCC = 0  # cv2.VideoWriter_fourcc(*'XVID')
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
@@ -24,17 +25,19 @@ class Model:
 
     def _format_tif(self, tif_file, dest_folder):
         im_stack = Image.open(tif_file)
-        vid_name = dest_folder + '/' + ''.join(os.path.basename(tif_file).split('.')[:-1]) + '.mp4'
+        vid_name = dest_folder + ''.join(os.path.basename(tif_file).split('.')[:-1]) + '.mp4'
         for idx, img in enumerate(ImageSequence.Iterator(im_stack)):
             test = img
             img_data = np.array(test)
+            img_data.astype(np.uint8)
             if idx == 0:
                 h, w = img_data.shape
-                out_vid = cv2.VideoWriter(vid_name, -1, self.FRAME_RATE, (w, h))
-            out_vid.write(img_data)
+                #out_vid = cv2.VideoWriter(vid_name, self.FOURCC, self.FRAME_RATE, (w, h))
+                out_vid = FFmpegWriter(vid_name, {'-r':str(self.FRAME_RATE), '-s':f'{w}x{h}'})
+            out_vid.writeFrame(img_data)
 
-        cv2.destroyAllWindows()
-        out_vid.release()
+        # cv2.destroyAllWindows()
+        out_vid.close()
         return vid_name
 
     def _get_distance(self, x1, y1, x2, y2):
