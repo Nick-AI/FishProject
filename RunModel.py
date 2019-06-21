@@ -8,16 +8,16 @@ from PIL import Image, ImageSequence
 
 
 class Model:
-    def __init__(self, conf_file, save_dir, approach_radius, video_folder):
+    def __init__(self, conf_file, save_dir, approach_radius, video_folder, frame_rate):
         self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
                        'Head2_L', 'Head2_R', 'Head2_C', 'Tail2', 'Rod2']
         self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachMay7shuffle1_650000.h5'
-        self.FRAME_RATE = 10
         # Image petri diameter = 188px
         # Real petri diameter = 94mm
         self.SIZE_RATIO = 2
         self.CONF_THRESHOLD = 0.15
         self.FOURCC = 0  # cv2.VideoWriter_fourcc(*'XVID')
+        self.FRAME_RATE = frame_rate
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
@@ -221,13 +221,19 @@ class Model:
         print(f'\tTimes approaching rod with right side:\t{right_dict["right_approach"]}')
 
 
-    def analyze_video(self, tif_file, del_video=True, del_results=True):
+    def analyze_video(self, tif_file, del_video=False, del_results=True):
         result_dir = self.save_dir + '/' + ''.join(os.path.basename(tif_file).split('.')[:-1]) + '/'
         try:
             os.mkdir(result_dir)
         except:
             pass
-        vid_file = self._format_tif(tif_file, result_dir)
+        if tif_file.endswith('.tif'):
+            vid_file = self._format_tif(tif_file, result_dir)
+        elif tif_file.endswith('.avi'):
+            vid_file = tif_file
+        else:
+            raise Exception('Unknown video format. Please stick to tif or avi')
+
         try:
             deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
         except:
@@ -255,6 +261,11 @@ if __name__ == '__main__':
     parser.add_argument(
         'approach_radius', type=int,
         help='Radius around rod that will be considered as an approach if crossed (in mm)'
+    )
+
+    parser.add_argument(
+        '--frame_rate', '-f', type=int, required=False, default=10,
+        help='Frame rate at which videos were recorded. Default is 10'
     )
 
     parser.add_argument(
