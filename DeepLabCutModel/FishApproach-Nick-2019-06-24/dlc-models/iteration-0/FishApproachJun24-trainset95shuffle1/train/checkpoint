@@ -1,0 +1,6 @@
+model_checkpoint_path: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-900000"
+all_model_checkpoint_paths: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-700000"
+all_model_checkpoint_paths: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-750000"
+all_model_checkpoint_paths: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-800000"
+all_model_checkpoint_paths: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-850000"
+all_model_checkpoint_paths: "E:\\FishProject\\DeepLabCutNewVids\\FishApproach-Nick-2019-06-24\\dlc-models\\iteration-0\\FishApproachJun24-trainset95shuffle1\\train\\snapshot-900000"

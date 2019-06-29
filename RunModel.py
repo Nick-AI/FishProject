@@ -1,6 +1,6 @@
 import os
-import cv2
 import argparse
+import subprocess
 import deeplabcut
 import numpy as np
 import pandas as pd
@@ -8,33 +8,35 @@ from PIL import Image, ImageSequence
 
 
 class Model:
-    def __init__(self, conf_file, save_dir, approach_radius):
+    def __init__(self, conf_file, save_dir, approach_radius, video_folder, frame_rate):
         self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
                        'Head2_L', 'Head2_R', 'Head2_C', 'Tail2', 'Rod2']
-        self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachMay7shuffle1_650000.h5'
-        self.FRAME_RATE = 10
-        # Image petri diameter = 188px
+        self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachJun24shuffle1_900000.h5'
+        self.NEW_DIMS = {'width':  480,
+                         'height': 270}
+        # After resize:
+        # Image petri diameter = 181px
         # Real petri diameter = 94mm
-        self.SIZE_RATIO = 2
+        self.SIZE_RATIO = 1.93
         self.CONF_THRESHOLD = 0.15
+        self.FRAME_RATE = frame_rate
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
 
+    def _resize_avi(self, avi_file, dest_folder):
+        if not (avi_file.startswith('/') or avi_file[1]==':'):  # not an absolute path
+            pwd = os.getcwd()
+            avi_file = pwd + '/' + avi_file
 
-    def _format_tif(self, tif_file):
-        im_stack = Image.open(tif_file)
-        vid_name = self.save_dir + '/' + str(os.path.basename(tif_file).split('.')[0]) + '.mp4'
-        for idx, img in enumerate(ImageSequence.Iterator(im_stack)):
-            test = img
-            img_data = np.array(test)
-            if idx == 0:
-                h, w = img_data.shape
-                out_vid = cv2.VideoWriter(vid_name, -1, self.FRAME_RATE, (w, h))
-            out_vid.write(img_data)
-
-        cv2.destroyAllWindows()
-        out_vid.release()
+        if not (dest_folder.endswith('\\') or dest_folder.endswith('/')):
+            dest_folder += '/'
+        avi_file = avi_file.replace('\\', '/')
+        vid_name = f'{dest_folder + "".join(avi_file.split("/")[-1].split(".")[:-1])}_resized.avi'
+        subprocess.call(['ffmpeg',
+                         '-i', avi_file,
+                         '-vf', f'scale={self.NEW_DIMS["width"]}:{self.NEW_DIMS["height"]}',
+                         vid_name])
         return vid_name
 
     def _get_distance(self, x1, y1, x2, y2):
@@ -68,7 +70,16 @@ class Model:
         else:
             return 0
 
-    def _get_metrics(self, frame_lbls):
+    def _get_metrics(self, frame_lbls, save_dir):
+        out_df = pd.DataFrame(columns=['frame_idx',
+                                       'l_in_radius', 'l_left_approaches', 'l_right_approaches', 'l_in_time',
+                                       'l_out_time', 'l_left_time', 'l_right_time',
+                                       'l_left_head', 'l_right_head', 'l_center_head', 'l_rod',
+                                       'r_in_radius', 'r_left_approaches', 'r_right_approaches', 'r_in_time',
+                                       'r_out_time', 'r_left_time', 'r_right_time',
+                                       'r_left_head', 'r_right_head', 'r_center_head', 'r_rod'])
+        no_detect = [-1, -1]
+
         left_in_radius = False
         left_fish = {'in_time': 0,
                      'out_time': 0,
@@ -86,7 +97,8 @@ class Model:
                      'right_approach': 0}
 
 
-        for frame in frame_lbls.values[:]:
+        for idx, frame in enumerate(frame_lbls.values[:]):
+            row = [idx]
             # labels: HL 0:3, HR 3:6, HC 6:9, T 9:12, R 12:15
             petri1 = frame[:15]
             petri2 = frame[15:]
@@ -118,6 +130,26 @@ class Model:
                         left_in_radius = True
                     else:
                         left_fish['out_time'] += 1
+                row.append(int(left_in_radius))
+                row.append(left_fish['left_approach'])
+                row.append(left_fish['right_approach'])
+                row.append(left_fish['in_time'])
+                row.append(left_fish['out_time'])
+                row.append(left_fish['facing_left'])
+                row.append(left_fish['facing_right'])
+                row.append(petri1[0:2])
+                row.append(petri1[3:5])
+                row.append(petri1[6:8])
+                row.append(petri1[12:14])
+            else:
+                row.append(-1)
+                row.append(left_fish['left_approach'])
+                row.append(left_fish['right_approach'])
+                row.append(left_fish['in_time'])
+                row.append(left_fish['out_time'])
+                row.append(left_fish['facing_left'])
+                row.append(left_fish['facing_right'])
+                row += [no_detect]*4
 
             # if any labels are missing, frame will be disregarded
             if np.min(petri2) > self.CONF_THRESHOLD:
@@ -128,7 +160,7 @@ class Model:
 
                 # fish was in radius in previous frame
                 if right_in_radius:
-                    if self._approach_side(petri1) == 0:
+                    if self._approach_side(petri2) == 0:
                         right_in_radius = False
                         right_fish['out_time'] += 1
                     else:
@@ -136,20 +168,41 @@ class Model:
 
                 # fish wasn't in radius in previous frame
                 else:
-                    if self._approach_side(petri1) == 1:
+                    if self._approach_side(petri2) == 1:
                         right_fish['left_approach'] += 1
                         right_fish['in_time'] += 1
                         right_in_radius = True
-                    elif self._approach_side(petri1) == -1:
+                    elif self._approach_side(petri2) == -1:
                         right_fish['right_approach'] += 1
                         right_fish['in_time'] += 1
                         right_in_radius = True
                     else:
                         right_fish['out_time'] += 1
+                row.append(int(right_in_radius))
+                row.append(right_fish['left_approach'])
+                row.append(right_fish['right_approach'])
+                row.append(right_fish['in_time'])
+                row.append(right_fish['out_time'])
+                row.append(right_fish['facing_left'])
+                row.append(right_fish['facing_right'])
+                row.append(petri2[0:2])
+                row.append(petri2[3:5])
+                row.append(petri2[6:8])
+                row.append(petri2[12:14])
+            else:
+                row.append(-1)
+                row.append(right_fish['left_approach'])
+                row.append(right_fish['right_approach'])
+                row.append(right_fish['in_time'])
+                row.append(right_fish['out_time'])
+                row.append(right_fish['facing_left'])
+                row.append(right_fish['facing_right'])
+                row += [no_detect] * 4
+            out_df.loc[idx] = np.array(row)
+        out_df.to_csv(save_dir + 'approach_results.csv')
         return left_fish, right_fish
 
-    def _print_results(self, left_dict, right_dict):
-
+    def _quick_results(self, left_dict, right_dict):
         print('Left Petri Dish:')
         print(f'\tTime spent in radius:\t\t\t{left_dict["in_time"]/self.FRAME_RATE}')
         print(f'\tTime spent outside of radius:\t\t{left_dict["out_time"]/self.FRAME_RATE}')
@@ -167,15 +220,33 @@ class Model:
         print(f'\tTimes approaching rod with right side:\t{right_dict["right_approach"]}')
 
 
-    def analyze_video(self, tif_file, del_video=True, del_results=True):
-        vid_file = self._format_tif(tif_file)
-        deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=self.save_dir, save_as_csv=False)
+    def analyze_video(self, avi_file, del_video=False, del_results=True):
+        if self.save_dir.endswith('/'):
+            result_dir = self.save_dir + ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
+        else:
+            result_dir = self.save_dir + '/' + ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
 
-        result_file = self.save_dir + '/' + str(os.path.basename(vid_file).split('.')[0]) + self.RESULT_POSTFIX
+        try:
+            os.mkdir(result_dir)
+        except:
+            pass
+
+        if avi_file.endswith('.avi'):
+            vid_file = self._resize_avi(avi_file, result_dir)
+        else:
+            raise Exception('Unknown video format. Support is limited to tif or avi')
+
+        try:
+            deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
+        except:
+            print("Problem analyzing video. Check if config.yaml file was adjusted properly.")
+        deeplabcut.create_labeled_video(self.conf, [vid_file], destfolder=result_dir)
+
+        result_file = result_dir + ''.join(os.path.basename(vid_file).split('.')[:-1]) + self.RESULT_POSTFIX
         results = pd.read_hdf(result_file, 'df_with_missing')
 
-        left_results, right_results = self._get_metrics(results)
-        self._print_results(left_results, right_results)
+        left_results, right_results = self._get_metrics(results, result_dir)
+        self._quick_results(left_results, right_results)
 
         if del_video:
             os.remove(vid_file)
@@ -194,22 +265,33 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--save_dir', '-s', type=str, required=False, default='./',
+        '--frame_rate', '-f', type=int, required=False, default=10,
+        help='Frame rate at which videos were recorded. Default is 10'
+    )
+
+    parser.add_argument(
+        '--video_folder', '-v', type=str, required=False, default=None,
+        help='Folder containing videos to be analyzed. If not specified, user will be prompted for individual videos'
+    )
+
+    parser.add_argument(
+        '--save_dir', '-s', type=str, required=False, default=os.getcwd(),
         help='Directory where results will be stored (default is current directory)'
     )
 
     parser.add_argument(
         '--conf_file', '-c', type=str, required=False,
-        default='./DeepLabCutModel/FishApproach-Nick-2019-05-07/config.yaml',
+        default=os.getcwd() + '/DeepLabCutModel/FishApproach-Nick-2019-06-24/config.yaml',
         help='Config file, it is recommended to leave this unchanged for now'
     )
 
     usr_args = vars(parser.parse_args())
 
     model = Model(**usr_args)
-
-    while True:
-        vid_path = input('Enter video path or press Ctrl+C to quit:')
-        # E:\FishProject\OrigVids\drive-download-20190503T090214Z-010\Pa67_102610_152.153.tif
-        # E:\FishProject\OrigVids\drive-download-20190503T090214Z-010\Pa67_102610_154.155.tif
-        model.analyze_video(vid_path)
+    if usr_args['video_folder']:
+        for vid_path in [f for f in os.listdir(usr_args['video_folder'])]:
+            model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
+    else:
+        while True:
+            vid_path = input('Enter video path or press Ctrl+C to quit:')
+            model.analyze_video(vid_path)
