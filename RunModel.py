@@ -4,7 +4,6 @@ import subprocess
 import deeplabcut
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageSequence
 
 
 class Model:
@@ -73,28 +72,36 @@ class Model:
     def _get_metrics(self, frame_lbls, save_dir):
         out_df = pd.DataFrame(columns=['frame_idx',
                                        'l_in_radius', 'l_left_approaches', 'l_right_approaches', 'l_in_time',
-                                       'l_out_time', 'l_left_time', 'l_right_time',
+                                       'l_out_time',
+                                       'l_in_left_time', 'l_in_right_time',
+                                       'l_out_left_time', 'l_out_right_time',
                                        'l_left_head', 'l_right_head', 'l_center_head', 'l_rod',
                                        'r_in_radius', 'r_left_approaches', 'r_right_approaches', 'r_in_time',
-                                       'r_out_time', 'r_left_time', 'r_right_time',
+                                       'r_out_time',
+                                       'r_in_left_time', 'r_in_right_time',
+                                       'r_out_left_time', 'r_out_right_time',
                                        'r_left_head', 'r_right_head', 'r_center_head', 'r_rod'])
         no_detect = [-1, -1]
 
         left_in_radius = False
         left_fish = {'in_time': 0,
                      'out_time': 0,
-                     'facing_left': 0,
-                     'facing_right': 0,
+                     'in_facing_left': 0,
+                     'in_facing_right': 0,
+                     'out_facing_left': 0,
+                     'out_facing_right': 0,
                      'left_approach': 0,
                      'right_approach': 0}
 
         right_in_radius = False
         right_fish = {'in_time': 0,
-                     'out_time': 0,
-                     'facing_left': 0,
-                     'facing_right': 0,
-                     'left_approach': 0,
-                     'right_approach': 0}
+                      'out_time': 0,
+                      'in_facing_left': 0,
+                      'in_facing_right': 0,
+                      'out_facing_left': 0,
+                      'out_facing_right': 0,
+                      'left_approach': 0,
+                      'right_approach': 0}
 
 
         for idx, frame in enumerate(frame_lbls.values[:]):
@@ -105,38 +112,49 @@ class Model:
 
             # if any labels are missing, frame will be disregarded
             if np.min(petri1) > self.CONF_THRESHOLD:
-                if self._facing_side(petri1) == 1:
-                    left_fish['facing_left'] += 1
-                if self._facing_side(petri1) == -1:
-                    left_fish['facing_right'] += 1
-
                 # fish was in radius in previous frame
                 if left_in_radius:
                     if self._approach_side(petri1) == 0:
                         left_in_radius = False
                         left_fish['out_time'] += 1
+                        if self._facing_side(petri1) == 1:
+                            left_fish['out_facing_left'] += 1
+                        if self._facing_side(petri1) == -1:
+                            left_fish['out_facing_right'] += 1
                     else:
                         left_fish['in_time'] += 1
+                        if self._facing_side(petri1) == 1:
+                            left_fish['in_facing_left'] += 1
+                        if self._facing_side(petri1) == -1:
+                            left_fish['in_facing_right'] += 1
 
                 # fish wasn't in radius in previous frame
                 else:
                     if self._approach_side(petri1) == 1:
                         left_fish['left_approach'] += 1
                         left_fish['in_time'] += 1
+                        left_fish['in_facing_left'] += 1
                         left_in_radius = True
                     elif self._approach_side(petri1) == -1:
                         left_fish['right_approach'] += 1
                         left_fish['in_time'] += 1
+                        left_fish['in_facing_right'] += 1
                         left_in_radius = True
                     else:
                         left_fish['out_time'] += 1
+                        if self._facing_side(petri1) == 1:
+                            left_fish['out_facing_left'] += 1
+                        if self._facing_side(petri1) == -1:
+                            left_fish['out_facing_right'] += 1
                 row.append(int(left_in_radius))
                 row.append(left_fish['left_approach'])
                 row.append(left_fish['right_approach'])
-                row.append(left_fish['in_time'])
-                row.append(left_fish['out_time'])
-                row.append(left_fish['facing_left'])
-                row.append(left_fish['facing_right'])
+                row.append(round(left_fish['in_time']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_time']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['in_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['in_facing_right']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_facing_right']/self.FRAME_RATE, 2))
                 row.append(petri1[0:2])
                 row.append(petri1[3:5])
                 row.append(petri1[6:8])
@@ -145,46 +163,60 @@ class Model:
                 row.append(-1)
                 row.append(left_fish['left_approach'])
                 row.append(left_fish['right_approach'])
-                row.append(left_fish['in_time'])
-                row.append(left_fish['out_time'])
-                row.append(left_fish['facing_left'])
-                row.append(left_fish['facing_right'])
+                row.append(round(left_fish['in_time']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_time']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['in_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['in_facing_right']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(left_fish['out_facing_right']/self.FRAME_RATE, 2))
                 row += [no_detect]*4
 
             # if any labels are missing, frame will be disregarded
             if np.min(petri2) > self.CONF_THRESHOLD:
-                if self._facing_side(petri2) == 1:
-                    right_fish['facing_left'] += 1
-                if self._facing_side(petri2) == -1:
-                    right_fish['facing_right'] += 1
-
                 # fish was in radius in previous frame
                 if right_in_radius:
                     if self._approach_side(petri2) == 0:
                         right_in_radius = False
                         right_fish['out_time'] += 1
+                        if self._facing_side(petri2) == 1:
+                            right_fish['out_facing_left'] += 1
+                        if self._facing_side(petri2) == -1:
+                            right_fish['out_facing_right'] += 1
                     else:
                         right_fish['in_time'] += 1
+                        if self._facing_side(petri2) == 1:
+                            right_fish['in_facing_left'] += 1
+                        if self._facing_side(petri2) == -1:
+                            right_fish['in_facing_right'] += 1
 
                 # fish wasn't in radius in previous frame
                 else:
                     if self._approach_side(petri2) == 1:
                         right_fish['left_approach'] += 1
                         right_fish['in_time'] += 1
+                        right_fish['in_facing_left'] += 1
                         right_in_radius = True
                     elif self._approach_side(petri2) == -1:
                         right_fish['right_approach'] += 1
                         right_fish['in_time'] += 1
+                        right_fish['in_facing_right'] += 1
                         right_in_radius = True
                     else:
                         right_fish['out_time'] += 1
+                        if self._facing_side(petri2) == 1:
+                            right_fish['out_facing_left'] += 1
+                        if self._facing_side(petri2) == -1:
+                            right_fish['out_facing_right'] += 1
+
                 row.append(int(right_in_radius))
                 row.append(right_fish['left_approach'])
                 row.append(right_fish['right_approach'])
-                row.append(right_fish['in_time'])
-                row.append(right_fish['out_time'])
-                row.append(right_fish['facing_left'])
-                row.append(right_fish['facing_right'])
+                row.append(round(right_fish['in_time']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_time']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['in_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['in_facing_right']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_facing_right']/self.FRAME_RATE, 2))
                 row.append(petri2[0:2])
                 row.append(petri2[3:5])
                 row.append(petri2[6:8])
@@ -193,10 +225,12 @@ class Model:
                 row.append(-1)
                 row.append(right_fish['left_approach'])
                 row.append(right_fish['right_approach'])
-                row.append(right_fish['in_time'])
-                row.append(right_fish['out_time'])
-                row.append(right_fish['facing_left'])
-                row.append(right_fish['facing_right'])
+                row.append(round(right_fish['in_time']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_time']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['in_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['in_facing_right']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_facing_left']/self.FRAME_RATE, 2))
+                row.append(round(right_fish['out_facing_right']/self.FRAME_RATE, 2))
                 row += [no_detect] * 4
             out_df.loc[idx] = np.array(row)
         out_df.to_csv(save_dir + 'approach_results.csv')
@@ -205,17 +239,21 @@ class Model:
     def _quick_results(self, left_dict, right_dict):
         print('Left Petri Dish:')
         print(f'\tTime spent in radius:\t\t\t{left_dict["in_time"]/self.FRAME_RATE}')
+        print(f'\tTime spent inside with left size facing rod:\t{left_dict["in_facing_left"]/self.FRAME_RATE}')
+        print(f'\tTime spent inside with right size facing rod:\t{left_dict["in_facing_right"]/self.FRAME_RATE}')
         print(f'\tTime spent outside of radius:\t\t{left_dict["out_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent with left size facing rod:\t{left_dict["facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent with right size facing rod:\t{left_dict["facing_right"]/self.FRAME_RATE}')
+        print(f'\tTime spent outside with left size facing rod:\t{left_dict["out_facing_left"]/self.FRAME_RATE}')
+        print(f'\tTime spent outside with right size facing rod:\t{left_dict["out_facing_right"]/self.FRAME_RATE}')
         print(f'\tTimes approaching rod with left side:\t{left_dict["left_approach"]}')
         print(f'\tTimes approaching rod with right side:\t{left_dict["right_approach"]}')
 
         print('Right Petri Dish:')
         print(f'\tTime spent in radius:\t\t\t{right_dict["in_time"]/self.FRAME_RATE}')
+        print(f'\tTime spent inside with left size facing rod:\t{right_dict["in_facing_left"]/self.FRAME_RATE}')
+        print(f'\tTime spent inside with right size facing rod:\t{right_dict["in_facing_right"]/self.FRAME_RATE}')
         print(f'\tTime spent outside of radius:\t\t{right_dict["out_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent with left size facing rod:\t{right_dict["facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent with right size facing rod:\t{right_dict["facing_right"]/self.FRAME_RATE}')
+        print(f'\tTime spent outside with left size facing rod:\t{right_dict["out_facing_left"]/self.FRAME_RATE}')
+        print(f'\tTime spent outside with right size facing rod:\t{right_dict["out_facing_right"]/self.FRAME_RATE}')
         print(f'\tTimes approaching rod with left side:\t{right_dict["left_approach"]}')
         print(f'\tTimes approaching rod with right side:\t{right_dict["right_approach"]}')
 
@@ -290,7 +328,10 @@ if __name__ == '__main__':
     model = Model(**usr_args)
     if usr_args['video_folder']:
         for vid_path in [f for f in os.listdir(usr_args['video_folder'])]:
-            model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
+            if usr_args['video_folder'].endswith('/') or usr_args['video_folder'].endswith('\\'):
+                model.analyze_video(usr_args['video_folder'][:-1] + '/' + vid_path)
+            else:
+                model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
     else:
         while True:
             vid_path = input('Enter video path or press Ctrl+C to quit:')
