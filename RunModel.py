@@ -22,6 +22,27 @@ class Model:
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
+        # Duration in radius, left - facing
+        # duration in radius, right - facing
+        # duration in radius, left - facing
+        # duration
+        # outside
+        # of
+        # radius, right - facing
+        # duration
+        # outside
+        # of
+        # radius, Times
+        # approaching
+        # with left side, Times approaching with right side
+        self.sum_file= pd.DataFrame(columns=['Subject',
+                                             'Duration in radius - left-facing',
+                                             'Duration in radius = right-facing',
+                                             'Duration outside radius - left-facing',
+                                             'Duration outside radius - right-facing',
+                                             'Left approaches',
+                                             'Right approaches'
+                                             ])
 
     def _resize_avi(self, avi_file, dest_folder):
         if not (avi_file.startswith('/') or avi_file[1]==':'):  # not an absolute path
@@ -258,6 +279,24 @@ class Model:
         print(f'\tTimes approaching rod with right side:\t{right_dict["right_approach"]}')
 
 
+    def _add_to_summary_file(self, left_dict, right_dict, fname):
+        lrow = {'Subject': f'{fname}_left',
+               'Duration in radius - left-facing': left_dict["in_facing_left"]/self.FRAME_RATE,
+               'Duration in radius = right-facing': left_dict["in_facing_right"]/self.FRAME_RATE,
+               'Duration outside radius - left-facing': left_dict["out_facing_left"]/self.FRAME_RATE,
+               'Duration outside radius - right-facing': left_dict["out_facing_right"]/self.FRAME_RATE,
+               'Left approaches': left_dict["left_approach"],
+               'Right approaches': left_dict["right_approach"]}
+        rrow = {'Subject': f'{fname}_right',
+               'Duration in radius - left-facing': right_dict["in_facing_left"]/self.FRAME_RATE,
+               'Duration in radius = right-facing': right_dict["in_facing_right"]/self.FRAME_RATE,
+               'Duration outside radius - left-facing': right_dict["out_facing_left"]/self.FRAME_RATE,
+               'Duration outside radius - right-facing': right_dict["out_facing_right"]/self.FRAME_RATE,
+               'Left approaches': right_dict["left_approach"],
+               'Right approaches': right_dict["right_approach"]}
+
+        self.sum_file = self.sum_file.append([lrow, rrow], ignore_index=True)
+
     def analyze_video(self, avi_file, del_video=False, del_results=True):
         if self.save_dir.endswith('/'):
             result_dir = self.save_dir + ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
@@ -285,6 +324,7 @@ class Model:
 
         left_results, right_results = self._get_metrics(results, result_dir)
         self._quick_results(left_results, right_results)
+        self._add_to_summary_file(left_results, right_results, ''.join(os.path.basename(avi_file).split('.')[:-1]))
 
         if del_video:
             os.remove(vid_file)
@@ -332,7 +372,15 @@ if __name__ == '__main__':
                 model.analyze_video(usr_args['video_folder'][:-1] + '/' + vid_path)
             else:
                 model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
+        if usr_args['save_dir'].endswith('\\') or usr_args['save_dir'].endswith('/'):
+            model.sum_file.to_csv(usr_args['save_dir']+'summary_results.csv', index=False)
+        else:
+            model.sum_file.to_csv(usr_args['save_dir'] + '/summary_results.csv', index=False)
     else:
         while True:
             vid_path = input('Enter video path or press Ctrl+C to quit:')
             model.analyze_video(vid_path)
+            if usr_args['save_dir'].endswith('\\') or usr_args['save_dir'].endswith('/'):
+                model.sum_file.to_csv(usr_args['save_dir']+'summary_results.csv', index=False)
+            else:
+                model.sum_file.to_csv(usr_args['save_dir'] + '/summary_results.csv', index=False)
