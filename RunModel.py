@@ -22,19 +22,6 @@ class Model:
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
-        # Duration in radius, left - facing
-        # duration in radius, right - facing
-        # duration in radius, left - facing
-        # duration
-        # outside
-        # of
-        # radius, right - facing
-        # duration
-        # outside
-        # of
-        # radius, Times
-        # approaching
-        # with left side, Times approaching with right side
         self.sum_file= pd.DataFrame(columns=['Subject',
                                              'Duration in radius - left-facing',
                                              'Duration in radius = right-facing',
