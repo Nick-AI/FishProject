@@ -17,7 +17,7 @@ class Model:
         # Image petri diameter = 181px
         # Real petri diameter = 94mm
         self.SIZE_RATIO = 1.93
-        self.CONF_THRESHOLD = 0.15
+        self.CONF_THRESHOLD = 0.92
         self.FRAME_RATE = frame_rate
         self.conf = conf_file
         self.save_dir = save_dir
