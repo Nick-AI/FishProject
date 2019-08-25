@@ -73,8 +73,8 @@ class Model:
 
     @staticmethod
     def _coord_fill_helper(relative_coords, frame_idx, fill_length):
-        x = (fill_length-1-frame_idx)/fill_length * relative_coords[0]
-        y = (fill_length-1-frame_idx)/fill_length * relative_coords[1]
+        x = (fill_length-frame_idx)/(fill_length+1) * relative_coords[0]
+        y = (fill_length-frame_idx)/(fill_length+1) * relative_coords[1]
         return [x, y]
 
     def _fill_missing_frames(self, row_buffer, curr_row, backtrack_counter):
@@ -83,6 +83,8 @@ class Model:
             tmp = row_buffer[buffer_end-row_idx]
             for col_idx in range(-1, -6, -1):
                 tmp[col_idx] = self._coord_fill_helper(curr_row[col_idx], row_idx, backtrack_counter)
+            # import pdb
+            # pdb.set_trace()
             row_buffer[buffer_end - row_idx] = tmp
         return row_buffer
 
