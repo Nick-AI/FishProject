@@ -72,25 +72,27 @@ class Model:
         return 0
 
     @staticmethod
-    def _coord_fill_helper(relative_coords, frame_idx, fill_length):
-        x = (fill_length-frame_idx)/(fill_length+1) * relative_coords[0]
-        y = (fill_length-frame_idx)/(fill_length+1) * relative_coords[1]
+    def _coord_fill_helper(relative_coords, frame_idx, fill_length, start_x, start_y):
+        x = start_x + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[0]-start_x))
+        y = start_y + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[1]-start_y))
         return [x, y]
 
-    def _fill_missing_frames(self, row_buffer, curr_row, backtrack_counter):
+    def _fill_missing_frames(self, row_buffer, curr_row, backtrack_counter, start_row):
         buffer_end = len(row_buffer)-1
         for row_idx in range(backtrack_counter):
             tmp = row_buffer[buffer_end-row_idx]
             for col_idx in range(-1, -6, -1):
-                tmp[col_idx] = self._coord_fill_helper(curr_row[col_idx], row_idx, backtrack_counter)
-            # import pdb
-            # pdb.set_trace()
+                s_x = start_row[col_idx][0]
+                s_y = start_row[col_idx][1]
+                tmp[col_idx] = self._coord_fill_helper(curr_row[col_idx], row_idx, backtrack_counter, s_x, s_y)
             row_buffer[buffer_end - row_idx] = tmp
         return row_buffer
 
     def _replace_low_conf(self, frame_lbls):
         l_row_buffer = []
         r_row_buffer = []
+        r_start_row = [[0, 0]]*5  # 3 head markers, 1 tail marker, 1 rod marker
+        l_start_row = [[0, 0]]*5  # 3 head markers, 1 tail marker, 1 rod marker
         l_conf_counter = 0
         r_conf_counter = 0
         no_detect = [-1, -1]
@@ -112,7 +114,8 @@ class Model:
                 l_row.append(petri1[6:8])  # head c
                 l_row.append(petri1[9:11]) # tail
                 l_row.append(petri1[12:14])  # rod
-                l_row_buffer = self._fill_missing_frames(l_row_buffer, l_row, l_conf_counter)
+                l_row_buffer = self._fill_missing_frames(l_row_buffer, l_row, l_conf_counter, l_start_row)
+                l_start_row = l_row[-5:]
                 l_conf_counter = 0
             else:
                 conf_flag = False
@@ -127,9 +130,10 @@ class Model:
                 r_row.append(petri2[0:2])
                 r_row.append(petri2[3:5])
                 r_row.append(petri2[6:8])
-                r_row.append(petri2[9:11])
+                r_row.append(petri2[9:11])  
                 r_row.append(petri2[12:14])
-                r_row_buffer = self._fill_missing_frames(r_row_buffer, r_row, r_conf_counter)
+                r_row_buffer = self._fill_missing_frames(r_row_buffer, r_row, r_conf_counter, r_start_row)
+                r_start_row = r_row[-5:]
                 r_conf_counter = 0
             else:
                 conf_flag = False
