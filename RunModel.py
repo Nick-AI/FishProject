@@ -130,7 +130,7 @@ class Model:
                 r_row.append(petri2[0:2])
                 r_row.append(petri2[3:5])
                 r_row.append(petri2[6:8])
-                r_row.append(petri2[9:11])  
+                r_row.append(petri2[9:11])
                 r_row.append(petri2[12:14])
                 r_row_buffer = self._fill_missing_frames(r_row_buffer, r_row, r_conf_counter, r_start_row)
                 r_start_row = r_row[-5:]
@@ -272,8 +272,8 @@ class Model:
                         right_fish['out_facing_right'] += 1
                 else:
                     right_fish['in_time'] += 1
-                    l_approach_duration += 1
-                    if l_approach_duration == self.FRAME_RATE//2:
+                    r_approach_duration += 1
+                    if r_approach_duration == self.FRAME_RATE//2:
                         if r_side_buffer == 'left':
                             right_fish['left_approach'] += 1
                         elif r_side_buffer == 'right':
