@@ -326,7 +326,7 @@ class BatchAnalyzer:
             if sum_df is None:
                 sum_df = rad_results.copy()
             else:
-                sum_df = sum_df.merge(rad_results.copy(), on='vid_fish', how='left', sort=False)
+                sum_df = sum_df.merge(rad_results.copy(), left_index=True, right_index=True, how='left', sort=False)
             assert not sum_df.isnull().values.any()  # check that same files were analyzed
 
             del rad_results
