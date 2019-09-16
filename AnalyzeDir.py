@@ -1,4 +1,5 @@
 import os
+import pdb
 import argparse
 import numpy as np
 import pandas as pd
@@ -6,7 +7,7 @@ from tqdm import tqdm
 
 
 class BatchAnalyzer:
-    def __init__(self, data_dir, radius_list, frame_rate, save_dir):
+    def __init__(self, data_dir, radius_list, frame_rate, save_dir, frame_file):
         self.SOURCE_DIR = data_dir
         self.RADIUS_LIST = radius_list
         self._radius = None
@@ -16,6 +17,10 @@ class BatchAnalyzer:
         # Real petri diameter = 94mm
         self.SIZE_RATIO = 1.93
         self.CONF_THRESHOLD = 0.92
+        self.FRAME_FILE = frame_file
+        if self.FRAME_FILE is not None:
+            self.FRAME_SNIPS = {}
+            self._parse_frames(self.FRAME_FILE)
 
     @property
     def approach_radius(self):
@@ -24,6 +29,23 @@ class BatchAnalyzer:
     @approach_radius.setter
     def approach_radius(self, value):
         self._radius = value
+
+    def _parse_frames(self, source):
+        with open(source, 'r') as f:
+            for idx, line in enumerate(f):
+                # row specifying video name
+                if idx%3 == 0:
+                    vname = line.strip()
+                    self.FRAME_SNIPS[vname] = {'l_fish': None,
+                                               'r_fish': None}
+                # row specifying left fish frames
+                elif (idx-1)%3 == 0:
+                    delin = line.split(' ')
+                    self.FRAME_SNIPS[vname]['l_fish'] = [int(delin[0]), int(delin[1])]
+
+                elif (idx-2)%3 == 0:
+                    delin = line.split(' ')
+                    self.FRAME_SNIPS[vname]['r_fish'] = [int(delin[0]), int(delin[1])]
 
     def _get_distance(self, x1, y1, x2, y2):
         return np.sqrt(np.square(x1-x2) + np.square(y1-y2)) / self.SIZE_RATIO
@@ -84,14 +106,14 @@ class BatchAnalyzer:
             l_row = [idx]
             r_row = []
             # labels: HL 0:3, HR 3:6, HC 6:9, T 9:12, R 12:15
-            petri1 = frame[:15].astype(np.float32)
-            petri2 = frame[15:].astype(np.float32)
+            petri1 = frame[1:16].astype(np.float32)
+            petri2 = frame[16:].astype(np.float32)
             if np.min(petri1) > self.CONF_THRESHOLD:
-                l_row.append(0)  # no filled
+                l_row.append(0)  # not filled
                 l_row.append(petri1[0:2])  # head l
                 l_row.append(petri1[3:5])  # head r
                 l_row.append(petri1[6:8])  # head c
-                l_row.append(petri1[9:11]) # tail
+                l_row.append(petri1[9:11])  # tail
                 l_row.append(petri1[12:14])  # rod
                 l_row_buffer = self._fill_missing_frames(l_row_buffer, l_row, l_conf_counter, l_start_row)
                 l_start_row = l_row[-5:]
@@ -130,7 +152,7 @@ class BatchAnalyzer:
                 r_row_buffer = []
         return out_df
 
-    def _get_metrics(self, filled_df):
+    def _get_metrics(self, filled_df, vid_title=None):
         left_in_radius = False
         left_fish = {'in_time': 0,
                      'out_time': 0,
@@ -159,132 +181,111 @@ class BatchAnalyzer:
         left_cols = [col for col in filled_df.columns if col.startswith('l')]
         right_cols = [col for col in filled_df.columns if col.startswith('r')]
 
+        if vid_title is not None:
+            l_snip = self.FRAME_SNIPS[vid_title]['l_fish']
+            l_idx_list = [i for i in range(l_snip[0], l_snip[1]+1)]
+            r_snip = self.FRAME_SNIPS[vid_title]['r_fish']
+            r_idx_list = [i for i in range(r_snip[0], r_snip[1]+1)]
+
         for idx, frame in filled_df.iterrows():
-            row = [idx]
             petri1 = frame.loc[left_cols]
             petri2 = frame[right_cols]
 
             # LEFT FISH
             # fish was in radius in previous frame
-            if left_in_radius:
-                if self._is_in_radius(petri1, 'l') == 0:
-                    left_in_radius = False
-                    l_approach_duration = 0
-                    left_fish['out_time'] += 1
-                    if self._is_left_facing(petri1, 'l') == 1:
-                        left_fish['out_facing_left'] += 1
+            if vid_title is None or idx in l_idx_list:
+                if left_in_radius:
+                    if self._is_in_radius(petri1, 'l') == 0:
+                        left_in_radius = False
+                        l_approach_duration = 0
+                        left_fish['out_time'] += 1
+                        if self._is_left_facing(petri1, 'l') == 1:
+                            left_fish['out_facing_left'] += 1
+                        else:
+                            left_fish['out_facing_right'] += 1
                     else:
-                        left_fish['out_facing_right'] += 1
-                else:
-                    left_fish['in_time'] += 1
-                    l_approach_duration += 1
-                    if l_approach_duration == self.FRAME_RATE//2:
-                        if l_side_buffer == 'left':
-                            left_fish['left_approach'] += 1
-                        elif l_side_buffer == 'right':
-                            left_fish['right_approach'] += 1
-                        l_side_buffer = None
-                    if self._is_left_facing(petri1, 'l') == 1:
-                        left_fish['in_facing_left'] += 1
-                    else:
-                        left_fish['in_facing_right'] += 1
-
-            # fish wasn't in radius in previous frame
-            else:
-                if self._is_in_radius(petri1, 'l') == 1:
-                    if self._is_left_facing(petri1, 'l') == 1:
-                        l_side_buffer = 'left'
+                        left_fish['in_time'] += 1
                         l_approach_duration += 1
-                        left_fish['in_time'] += 1
-                        left_fish['in_facing_left'] += 1
-                        left_in_radius = True
-                    else:
-                        l_side_buffer = 'right'
-                        left_fish['in_time'] += 1
-                        left_fish['in_facing_right'] += 1
-                        left_in_radius = True
+                        if l_approach_duration == self.FRAME_RATE//2:
+                            if l_side_buffer == 'left':
+                                left_fish['left_approach'] += 1
+                            elif l_side_buffer == 'right':
+                                left_fish['right_approach'] += 1
+                            l_side_buffer = None
+                        if self._is_left_facing(petri1, 'l') == 1:
+                            left_fish['in_facing_left'] += 1
+                        else:
+                            left_fish['in_facing_right'] += 1
+
+                # fish wasn't in radius in previous frame
                 else:
-                    left_fish['out_time'] += 1
-                    l_approach_duration = 0
-                    if self._is_left_facing(petri1, 'l') == 1:
-                        left_fish['out_facing_left'] += 1
+                    if self._is_in_radius(petri1, 'l') == 1:
+                        if self._is_left_facing(petri1, 'l') == 1:
+                            l_side_buffer = 'left'
+                            l_approach_duration += 1
+                            left_fish['in_time'] += 1
+                            left_fish['in_facing_left'] += 1
+                            left_in_radius = True
+                        else:
+                            l_side_buffer = 'right'
+                            left_fish['in_time'] += 1
+                            left_fish['in_facing_right'] += 1
+                            left_in_radius = True
                     else:
-                        left_fish['out_facing_right'] += 1
-            row.append(int(left_in_radius))
-            row.append(left_fish['left_approach'])
-            row.append(left_fish['right_approach'])
-            row.append(round(left_fish['in_time']/self.FRAME_RATE, 2))
-            row.append(round(left_fish['out_time']/self.FRAME_RATE, 2))
-            row.append(round(left_fish['in_facing_left']/self.FRAME_RATE, 2))
-            row.append(round(left_fish['in_facing_right']/self.FRAME_RATE, 2))
-            row.append(round(left_fish['out_facing_left']/self.FRAME_RATE, 2))
-            row.append(round(left_fish['out_facing_right']/self.FRAME_RATE, 2))
-            row.append(petri1.loc['lhead_l'])  # head l
-            row.append(petri1.loc['lhead_r'])  # head r
-            row.append(petri1.loc['lhead_c'])  # head c
-            row.append(petri1.loc['lrod'])  # rod
-            row.append(petri1.loc['l_filled'])
+                        left_fish['out_time'] += 1
+                        l_approach_duration = 0
+                        if self._is_left_facing(petri1, 'l') == 1:
+                            left_fish['out_facing_left'] += 1
+                        else:
+                            left_fish['out_facing_right'] += 1
 
             # RIGHT FISH
             # fish was in radius in previous frame
-            if right_in_radius:
-                if self._is_in_radius(petri2, 'r') == 0:
-                    right_in_radius = False
-                    r_approach_duration = 0
-                    right_fish['out_time'] += 1
-                    if self._is_left_facing(petri2, 'r') == 1:
-                        right_fish['out_facing_left'] += 1
+            if vid_title is None or idx in r_idx_list:
+                if right_in_radius:
+                    if self._is_in_radius(petri2, 'r') == 0:
+                        right_in_radius = False
+                        r_approach_duration = 0
+                        right_fish['out_time'] += 1
+                        if self._is_left_facing(petri2, 'r') == 1:
+                            right_fish['out_facing_left'] += 1
+                        else:
+                            right_fish['out_facing_right'] += 1
                     else:
-                        right_fish['out_facing_right'] += 1
-                else:
-                    right_fish['in_time'] += 1
-                    r_approach_duration += 1
-                    if r_approach_duration == self.FRAME_RATE//2:
-                        if r_side_buffer == 'left':
-                            right_fish['left_approach'] += 1
-                        elif r_side_buffer == 'right':
-                            right_fish['right_approach'] += 1
-                        r_side_buffer = None
-                    if self._is_left_facing(petri2, 'r') == 1:
-                        right_fish['in_facing_left'] += 1
-                    else:
-                        right_fish['in_facing_right'] += 1
-
-            # fish wasn't in radius in previous frame
-            else:
-                if self._is_in_radius(petri2, 'r') == 1:
-                    if self._is_left_facing(petri2, 'r') == 1:
-                        r_side_buffer = 'left'
+                        right_fish['in_time'] += 1
                         r_approach_duration += 1
-                        right_fish['in_time'] += 1
-                        right_fish['in_facing_left'] += 1
-                        right_in_radius = True
-                    else:
-                        r_side_buffer = 'right'
-                        right_fish['in_time'] += 1
-                        right_fish['in_facing_right'] += 1
-                        right_in_radius = True
+                        if r_approach_duration == self.FRAME_RATE//2:
+                            if r_side_buffer == 'left':
+                                right_fish['left_approach'] += 1
+                            elif r_side_buffer == 'right':
+                                right_fish['right_approach'] += 1
+                            r_side_buffer = None
+                        if self._is_left_facing(petri2, 'r') == 1:
+                            right_fish['in_facing_left'] += 1
+                        else:
+                            right_fish['in_facing_right'] += 1
+
+                # fish wasn't in radius in previous frame
                 else:
-                    right_fish['out_time'] += 1
-                    r_approach_duration = 0
-                    if self._is_left_facing(petri2, 'r') == 1:
-                        right_fish['out_facing_left'] += 1
+                    if self._is_in_radius(petri2, 'r') == 1:
+                        if self._is_left_facing(petri2, 'r') == 1:
+                            r_side_buffer = 'left'
+                            r_approach_duration += 1
+                            right_fish['in_time'] += 1
+                            right_fish['in_facing_left'] += 1
+                            right_in_radius = True
+                        else:
+                            r_side_buffer = 'right'
+                            right_fish['in_time'] += 1
+                            right_fish['in_facing_right'] += 1
+                            right_in_radius = True
                     else:
-                        right_fish['out_facing_right'] += 1
-            row.append(int(right_in_radius))
-            row.append(right_fish['left_approach'])
-            row.append(right_fish['right_approach'])
-            row.append(round(right_fish['in_time']/self.FRAME_RATE, 2))
-            row.append(round(right_fish['out_time']/self.FRAME_RATE, 2))
-            row.append(round(right_fish['in_facing_left']/self.FRAME_RATE, 2))
-            row.append(round(right_fish['in_facing_right']/self.FRAME_RATE, 2))
-            row.append(round(right_fish['out_facing_left']/self.FRAME_RATE, 2))
-            row.append(round(right_fish['out_facing_right']/self.FRAME_RATE, 2))
-            row.append(petri2.loc['rhead_l'])  # head l
-            row.append(petri2.loc['rhead_r'])  # head r
-            row.append(petri2.loc['rhead_c'])  # head c
-            row.append(petri2.loc['rrod'])  # rod
-            row.append(petri2.loc['r_filled'])
+                        right_fish['out_time'] += 1
+                        r_approach_duration = 0
+                        if self._is_left_facing(petri2, 'r') == 1:
+                            right_fish['out_facing_left'] += 1
+                        else:
+                            right_fish['out_facing_right'] += 1
         return left_fish, right_fish
 
     def walk_dir(self):
@@ -307,16 +308,17 @@ class BatchAnalyzer:
 
                 assert len(vdata) > 0  # check if some result file was found
 
-                vdata = pd.read_csv(vdata)
-                vdata = self._replace_low_conf(vdata)
-                l_results, r_results = self._get_metrics(vdata)
+                if self.FRAME_FILE is None or os.path.basename(vid_data).split('.')[0] in self.FRAME_SNIPS.keys():
+                    vdata = pd.read_csv(vdata)
+                    vdata = self._replace_low_conf(vdata)
+                    l_results, r_results = self._get_metrics(vdata, os.path.basename(vid_data).split('.')[0])
 
-                l_row = {f'vid_fish': f'{vname}: Fish 1',
-                         f'left_approaches({self.approach_radius})': l_results['left_approach'],
-                         f'right_approaches({self.approach_radius})': l_results['right_approach']}
-                r_row = {f'vid_fish': f'{vname}: Fish 2',
-                         f'left_approaches({self.approach_radius})': r_results['left_approach'],
-                         f'right_approaches({self.approach_radius})': r_results['right_approach']}
+                    l_row = {f'vid_fish': f'{vname}: Fish 1',
+                             f'left_approaches({self.approach_radius})': l_results['left_approach'],
+                             f'right_approaches({self.approach_radius})': l_results['right_approach']}
+                    r_row = {f'vid_fish': f'{vname}: Fish 2',
+                             f'left_approaches({self.approach_radius})': r_results['left_approach'],
+                             f'right_approaches({self.approach_radius})': r_results['right_approach']}
 
                 rad_results.loc[rad_results['vid_fish'].count()] = l_row
                 rad_results.loc[rad_results['vid_fish'].count()] = r_row
@@ -330,8 +332,13 @@ class BatchAnalyzer:
             assert not sum_df.isnull().values.any()  # check that same files were analyzed
 
             del rad_results
-        sum_df.to_csv(os.path.join(self.TARGET_DIR, 'radius_analysis.csv'))
-        return os.path.join(self.TARGET_DIR, 'radius_analysis.csv')
+
+        if self.FRAME_FILE is not None:
+            sname = 'radius_frame_analysis.csv'
+        else:
+            sname = 'radius_analysis.csv'
+        sum_df.to_csv(os.path.join(self.TARGET_DIR, sname))
+        return os.path.join(self.TARGET_DIR, sname)
 
 
 if __name__ == '__main__':
@@ -359,11 +366,19 @@ if __name__ == '__main__':
         help='Directory where results will be stored (default is current directory).'
     )
 
+    parser.add_argument(
+        '--frame_file', '-x', type=str, required=False, default=None,
+        help='File containing subsections of videos to analyze.'
+    )
+
     usr_args = vars(parser.parse_args())
 
     walker = BatchAnalyzer(**usr_args)
     save_file = walker.walk_dir()
     print(f'Success! Results are saved at {save_file}.')
+
+
+# (venv) C:\Users\yanni\Desktop\tm\FishProject>python AnalyzeDir.py -r 1 30 -f 10 -d C:/Users/yanni/Desktop/tm/BulkResults -s ./
 
 
 

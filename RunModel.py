@@ -8,8 +8,6 @@ import pandas as pd
 
 class Model:
     def __init__(self, conf_file, save_dir, approach_radius, video_folder, frame_rate):
-        self.LABELS = ['Head1_L', 'Head1_R', 'Head1_C', 'Tail1', 'Rod1',
-                       'Head2_L', 'Head2_R', 'Head2_C', 'Tail2', 'Rod2']
         self.RESULT_POSTFIX = 'DeepCut_resnet50_FishApproachJun24shuffle1_900000.h5'
         self.NEW_DIMS = {'width':  480,
                          'height': 270}
@@ -22,17 +20,17 @@ class Model:
         self.conf = conf_file
         self.save_dir = save_dir
         self.approach_radius = approach_radius
-        self.sum_file= pd.DataFrame(columns=['Subject',
-                                             'Duration in radius - left-facing',
-                                             'Duration in radius = right-facing',
-                                             'Duration outside radius - left-facing',
-                                             'Duration outside radius - right-facing',
-                                             'Left approaches',
-                                             'Right approaches'
-                                             ])
+        self.sum_file = pd.DataFrame(columns=['Subject',
+                                              'Duration in radius - left-facing',
+                                              'Duration in radius = right-facing',
+                                              'Duration outside radius - left-facing',
+                                              'Duration outside radius - right-facing',
+                                              'Left approaches',
+                                              'Right approaches'
+                                              ])
 
     def _resize_avi(self, avi_file, dest_folder):
-        if not (avi_file.startswith('/') or avi_file[1]==':'):  # not an absolute path
+        if not (avi_file.startswith('/') or avi_file[1] == ':'):  # not an absolute path
             pwd = os.getcwd()
             avi_file = pwd + '/' + avi_file
 
