@@ -181,7 +181,7 @@ class BatchAnalyzer:
         left_cols = [col for col in filled_df.columns if col.startswith('l')]
         right_cols = [col for col in filled_df.columns if col.startswith('r')]
 
-        if vid_title is not None:
+        if self.FRAME_FILE is not None:
             l_snip = self.FRAME_SNIPS[vid_title]['l_fish']
             l_idx_list = [i for i in range(l_snip[0], l_snip[1]+1)]
             r_snip = self.FRAME_SNIPS[vid_title]['r_fish']
@@ -193,7 +193,7 @@ class BatchAnalyzer:
 
             # LEFT FISH
             # fish was in radius in previous frame
-            if vid_title is None or idx in l_idx_list:
+            if self.FRAME_FILE is None or idx in l_idx_list:
                 if left_in_radius:
                     if self._is_in_radius(petri1, 'l') == 0:
                         left_in_radius = False
@@ -241,7 +241,7 @@ class BatchAnalyzer:
 
             # RIGHT FISH
             # fish was in radius in previous frame
-            if vid_title is None or idx in r_idx_list:
+            if self.FRAME_FILE is None or idx in r_idx_list:
                 if right_in_radius:
                     if self._is_in_radius(petri2, 'r') == 0:
                         right_in_radius = False
