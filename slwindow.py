@@ -4,12 +4,11 @@ import argparse
 import numpy as np
 import pandas as pd
 
+
 class BackFiller:
-    def __init__(self, approach_radius, frame_rate, result_folder, frame_file=None, window_size=10):
-        self.SIZE_RATIO = 5.287  # for Vania 02/28/2021 data
-        # self.SIZE_RATIO = 2.34 # for Emma Post data
-        # self.SIZE_RATIO = 3.11 #for former size
-        # self.SIZE_RATIO = 2.29 # for Ed_Wun data
+    def __init__(self, approach_radius, frame_rate, result_folder, dims_x, ratio_pixmm,
+                 frame_file=None, window_size=10):
+        self.size_ratio = ratio_pixmm * (480 / dims_x)
 
         self.approach_radius = approach_radius
         self.frame_rate = frame_rate
@@ -59,7 +58,7 @@ class BackFiller:
                     self.frame_snips[vname]["r_fish"] = [int(delin[0]), int(delin[1])]
 
     def _get_distance(self, x1, y1, x2, y2):
-        return np.sqrt(np.square(x1 - x2) + np.square(y1 - y2)) / self.SIZE_RATIO
+        return np.sqrt(np.square(x1 - x2) + np.square(y1 - y2)) / self.size_ratio
 
     def _is_left_facing(self, row, side_prefix):
 
@@ -573,6 +572,20 @@ if __name__ == "__main__":
                         required=False,
                         default=10,
                         help="Rolling window size for filling coordinates. Default is 10.")
+
+    parser.add_argument("--ratio_pixmm",
+                        "-r",
+                        type=float,
+                        required=True,
+                        default=5.287,
+                        help="Pixel to millimeter ratio (px/mm).")
+
+    parser.add_argument("--dims_x",
+                        "-d",
+                        type=int,
+                        required=True,
+                        default=1280,
+                        help="Original video x-dimensionality in pixels.")
 
     usr_args = vars(parser.parse_args())
 
