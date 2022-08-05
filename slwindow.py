@@ -37,12 +37,12 @@ class BackFiller:
             if v != targ:
                 return False
         return True
-    
+
     def _parse_frames(self, source):
         with open(source, "r") as f:
-            
+
             for idx, line in enumerate(f):
-                
+
                 # row specifying video name
                 if idx % 3 == 0:
                     vname = line.strip()
@@ -51,11 +51,13 @@ class BackFiller:
                 # row specifying left fish frames
                 elif (idx - 1) % 3 == 0:
                     delin = line.split(" ")
-                    self.frame_snips[vname]["l_fish"] = [int(delin[0]), int(delin[1])]
+                    self.frame_snips[vname]["l_fish"] = [
+                        int(delin[0]), int(delin[1])]
 
                 elif (idx - 2) % 3 == 0:
                     delin = line.split(" ")
-                    self.frame_snips[vname]["r_fish"] = [int(delin[0]), int(delin[1])]
+                    self.frame_snips[vname]["r_fish"] = [
+                        int(delin[0]), int(delin[1])]
 
     def _get_distance(self, x1, y1, x2, y2):
         return np.sqrt(np.square(x1 - x2) + np.square(y1 - y2)) / self.size_ratio
@@ -208,14 +210,14 @@ class BackFiller:
                         else:
                             left_fish["in_time"] += 1
                             l_approach_duration += 1
-                            
+
                             if l_approach_duration == self.frame_rate // 2:
                                 if l_side_buffer == "left":
                                     left_fish["left_approach"] += 1
                                 elif l_side_buffer == "right":
                                     left_fish["right_approach"] += 1
                                 l_side_buffer = None
-                                
+
                             if self._is_left_facing(petri1, "l") == 1:
                                 left_fish["in_facing_left"] += 1
                             else:
@@ -248,13 +250,19 @@ class BackFiller:
                     row.append(int(left_in_radius))
                     row.append(left_fish["left_approach"])
                     row.append(left_fish["right_approach"])
-                    row.append(round(left_fish["in_time"] / self.frame_rate, 2))
-                    row.append(round(left_fish["out_time"] / self.frame_rate, 2))
-                    row.append(round(left_fish["in_facing_left"] / self.frame_rate, 2))
-                    row.append(round(left_fish["in_facing_right"] / self.frame_rate, 2))
-                    row.append(round(left_fish["out_facing_left"] / self.frame_rate, 2))
                     row.append(
-                        round(left_fish["out_facing_right"] / self.frame_rate, 2)
+                        round(left_fish["in_time"] / self.frame_rate, 2))
+                    row.append(
+                        round(left_fish["out_time"] / self.frame_rate, 2))
+                    row.append(
+                        round(left_fish["in_facing_left"] / self.frame_rate, 2))
+                    row.append(
+                        round(left_fish["in_facing_right"] / self.frame_rate, 2))
+                    row.append(
+                        round(left_fish["out_facing_left"] / self.frame_rate, 2))
+                    row.append(
+                        round(left_fish["out_facing_right"] /
+                              self.frame_rate, 2)
                     )
                     row.append(petri1.loc["lhead_l"])  # head l
                     row.append(petri1.loc["lhead_r"])  # head r
@@ -273,7 +281,7 @@ class BackFiller:
                             right_in_radius = False
                             r_approach_duration = 0
                             right_fish["out_time"] += 1
-                            
+
                             if self._is_left_facing(petri2, "r") == 1:
                                 right_fish["out_facing_left"] += 1
                             else:
@@ -292,7 +300,7 @@ class BackFiller:
 
                             if self._is_left_facing(petri2, "r") == 1:
                                 right_fish["in_facing_left"] += 1
-                                
+
                             else:
                                 right_fish["in_facing_right"] += 1
                         if (
@@ -345,27 +353,33 @@ class BackFiller:
                     row.append(int(right_in_radius))
                     row.append(right_fish["left_approach"])
                     row.append(right_fish["right_approach"])
-                    row.append(round(right_fish["in_time"] / self.frame_rate, 2))
-                    row.append(round(right_fish["out_time"] / self.frame_rate, 2))
-                    row.append(round(right_fish["in_facing_left"] / self.frame_rate, 2))
                     row.append(
-                        round(right_fish["in_facing_right"] / self.frame_rate, 2)
+                        round(right_fish["in_time"] / self.frame_rate, 2))
+                    row.append(
+                        round(right_fish["out_time"] / self.frame_rate, 2))
+                    row.append(
+                        round(right_fish["in_facing_left"] / self.frame_rate, 2))
+                    row.append(
+                        round(right_fish["in_facing_right"] /
+                              self.frame_rate, 2)
                     )
                     row.append(
-                        round(right_fish["out_facing_left"] / self.frame_rate, 2)
+                        round(right_fish["out_facing_left"] /
+                              self.frame_rate, 2)
                     )
                     row.append(
-                        round(right_fish["out_facing_right"] / self.frame_rate, 2)
+                        round(right_fish["out_facing_right"] /
+                              self.frame_rate, 2)
                     )
                     row.append(petri2.loc["rhead_l"])  # head l
                     row.append(petri2.loc["rhead_r"])  # head r
                     row.append(petri2.loc["rhead_c"])  # head c
                     row.append(petri2.loc["rrod"])  # rod
                     row.append(petri2.loc["r_filled"])
-                    
+
                 else:
                     row += fill_row
-                    
+
                 out_df.loc[df_idx] = row
 
         l_dist = 0
@@ -380,10 +394,12 @@ class BackFiller:
 
             else:
                 tmp = out_df.loc[row_idx, "l_center_head"]
-                l_dist += self._get_distance(l_pos[0], l_pos[1], tmp[0], tmp[1])
+                l_dist += self._get_distance(l_pos[0],
+                                             l_pos[1], tmp[0], tmp[1])
                 l_pos = tmp.copy()
                 tmp = out_df.loc[row_idx, "r_center_head"]
-                r_dist += self._get_distance(r_pos[0], r_pos[1], tmp[0], tmp[1])
+                r_dist += self._get_distance(r_pos[0],
+                                             r_pos[1], tmp[0], tmp[1])
                 r_pos = tmp.copy()
 
         left_fish["distance"] = l_dist
@@ -404,8 +420,10 @@ class BackFiller:
 
             # not start but still too close to start for full backwards sliding window
             elif i < win_range:
-                x_coord = (np.mean(col[:i, 0]) + np.mean(col[i + 1:i + 1 + win_range, 0])) / 2
-                y_coord = (np.mean(col[:i, 1]) + np.mean(col[i + 1:i + 1 + win_range, 1])) / 2
+                x_coord = (
+                    np.mean(col[:i, 0]) + np.mean(col[i + 1:i + 1 + win_range, 0])) / 2
+                y_coord = (
+                    np.mean(col[:i, 1]) + np.mean(col[i + 1:i + 1 + win_range, 1])) / 2
                 results.append([x_coord, y_coord])
 
             # end
@@ -417,13 +435,17 @@ class BackFiller:
             # not end but too close for full forward sliding window
             # need to add +1 here because right side of list slice is exclusive index
             elif i + 1 + win_range > col.shape[0] - 1:
-                x_coord = (np.mean(col[i - win_range:i, 0]) + np.mean(col[i + 1:, 0])) / 2
-                y_coord = (np.mean(col[i - win_range:i, 1]) + np.mean(col[i + 1:, 1])) / 2
+                x_coord = (np.mean(col[i - win_range:i, 0]
+                                   ) + np.mean(col[i + 1:, 0])) / 2
+                y_coord = (np.mean(col[i - win_range:i, 1]
+                                   ) + np.mean(col[i + 1:, 1])) / 2
                 results.append([x_coord, y_coord])
 
             else:
-                x_coord = (np.mean(col[i - win_range:i, 0]) + np.mean(col[i + 1:i + 1 + win_range, 0])) / 2
-                y_coord = (np.mean(col[i - win_range:i, 1]) + np.mean(col[i + 1:i + 1 + win_range, 1])) / 2
+                x_coord = (np.mean(col[i - win_range:i, 0]) +
+                           np.mean(col[i + 1:i + 1 + win_range, 0])) / 2
+                y_coord = (np.mean(col[i - win_range:i, 1]) +
+                           np.mean(col[i + 1:i + 1 + win_range, 1])) / 2
                 results.append([x_coord, y_coord])
 
         return results
@@ -454,34 +476,35 @@ class BackFiller:
 
     def _convert_source_df(self, in_df):
         out_cols = {"frame_idx": 'frame_idx',
-                    "l_filled": 'l_coords_filled', 
-                    "lhead_l": 'l_left_head', 
-                    "lhead_r": 'l_right_head', 
-                    "lhead_c": 'l_center_head', 
-                    "ltail": None, 
-                    "lrod": 'l_rod', 
-                    "r_filled": 'r_coords_filled', 
-                    "rhead_l": 'r_left_head', 
+                    "l_filled": 'l_coords_filled',
+                    "lhead_l": 'l_left_head',
+                    "lhead_r": 'l_right_head',
+                    "lhead_c": 'l_center_head',
+                    "ltail": None,
+                    "lrod": 'l_rod',
+                    "r_filled": 'r_coords_filled',
+                    "rhead_l": 'r_left_head',
                     "rhead_r": 'r_right_head',
-                    "rhead_c": 'r_center_head', 
-                    "rtail": None, 
+                    "rhead_c": 'r_center_head',
+                    "rtail": None,
                     "rrod": 'r_rod'}
-        
+
         # initialize dictionary holding values for out df
         out_dict = {}
         for col in out_cols.keys():
             # tail coordinates are irrelevant
             if 'tail' in col:
-                out_dict[col] = [[0,0]] * in_df.shape[0]
-            
+                out_dict[col] = [[0, 0]] * in_df.shape[0]
+
             # these columns can be copied directly
             elif col in ['frame_idx', 'l_filled', 'r_filled']:
                 out_dict[col] = in_df[out_cols[col]].tolist()
-                
+
             # everything else needs to be filled in
             else:
                 # might need to work with legacy pandas version, can't call .to_numpy()
-                col_array = np.array([self._form_str_cell(item) for item in in_df[out_cols[col]].tolist()])
+                col_array = np.array([self._form_str_cell(item)
+                                     for item in in_df[out_cols[col]].tolist()])
                 out_dict[col] = self._roll_mean(col_array)
 
         return pd.DataFrame.from_dict(out_dict)
@@ -527,7 +550,8 @@ class BackFiller:
         else:
             src_df = pd.read_csv(result_dir + 'approach_results.csv')
             conv_df = self._convert_source_df(src_df)
-            left_results, right_results = self._get_metrics(conv_df, result_dir)
+            left_results, right_results = self._get_metrics(
+                conv_df, result_dir)
 
             self._add_to_summary_file(
                 left_results,
@@ -539,7 +563,8 @@ class BackFiller:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Backfill& reanalyze cavefish results.")
+    parser = argparse.ArgumentParser(
+        description="Backfill& reanalyze cavefish results.")
 
     parser.add_argument("approach_radius",
                         type=int,
@@ -594,15 +619,18 @@ if __name__ == "__main__":
     for vid_path in [f for f in os.listdir(usr_args["result_folder"])]:
         if usr_args["result_folder"].endswith("/") or usr_args["result_folder"].endswith("\\"):
             if os.path.isdir(usr_args["result_folder"][:-1] + "/" + vid_path + "/"):
-                filler.analyze_video(usr_args["result_folder"][:-1] + "/" + vid_path + "/")
+                filler.analyze_video(
+                    usr_args["result_folder"][:-1] + "/" + vid_path + "/")
 
         else:
             if os.path.isdir(usr_args["result_folder"][:-1] + "/" + vid_path + "/"):
-                filler.analyze_video(usr_args["result_folder"] + "/" + vid_path + "/")
+                filler.analyze_video(
+                    usr_args["result_folder"] + "/" + vid_path + "/")
 
     if usr_args["result_folder"].endswith("\\") or usr_args["result_folder"].endswith("/"):
-        filler.sum_file.to_csv(usr_args["result_folder"] + "roll_avg_summary_results.csv", index=False)
+        filler.sum_file.to_csv(
+            usr_args["result_folder"] + "roll_avg_summary_results.csv", index=False)
 
     else:
-        filler.sum_file.to_csv(usr_args["result_folder"] + "/roll_avg_summary_results.csv", index=False)
-
+        filler.sum_file.to_csv(
+            usr_args["result_folder"] + "/roll_avg_summary_results.csv", index=False)

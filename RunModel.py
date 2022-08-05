@@ -38,21 +38,24 @@ class Model:
         with open(source, 'r') as f:
             for idx, line in enumerate(f):
                 # row specifying video name
-                if idx%3 == 0:
+                if idx % 3 == 0:
                     vname = line.strip()
                     self.FRAME_SNIPS[vname] = {'l_fish': None,
                                                'r_fish': None}
                 # row specifying left fish frames
-                elif (idx-1)%3 == 0:
+                elif (idx-1) % 3 == 0:
                     delin = line.split(' ')
-                    self.FRAME_SNIPS[vname]['l_fish'] = [int(delin[0]), int(delin[1])]
+                    self.FRAME_SNIPS[vname]['l_fish'] = [
+                        int(delin[0]), int(delin[1])]
 
-                elif (idx-2)%3 == 0:
+                elif (idx-2) % 3 == 0:
                     delin = line.split(' ')
-                    self.FRAME_SNIPS[vname]['r_fish'] = [int(delin[0]), int(delin[1])]
+                    self.FRAME_SNIPS[vname]['r_fish'] = [
+                        int(delin[0]), int(delin[1])]
 
     def _resize_avi(self, avi_file, dest_folder):
-        if not (avi_file.startswith('/') or avi_file[1] == ':'):  # not an absolute path
+        # not an absolute path
+        if not (avi_file.startswith('/') or avi_file[1] == ':'):
             pwd = os.getcwd()
             avi_file = pwd + '/' + avi_file
 
@@ -93,8 +96,10 @@ class Model:
 
     @staticmethod
     def _coord_fill_helper(relative_coords, frame_idx, fill_length, start_x, start_y):
-        x = start_x + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[0]-start_x))
-        y = start_y + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[1]-start_y))
+        x = start_x + ((fill_length-frame_idx)/(fill_length+1)
+                       * (relative_coords[0]-start_x))
+        y = start_y + ((fill_length-frame_idx)/(fill_length+1)
+                       * (relative_coords[1]-start_y))
         return [x, y]
 
     def _fill_missing_frames(self, row_buffer, curr_row, backtrack_counter, start_row):
@@ -104,7 +109,8 @@ class Model:
             for col_idx in range(-1, -6, -1):
                 s_x = start_row[col_idx][0]
                 s_y = start_row[col_idx][1]
-                tmp[col_idx] = self._coord_fill_helper(curr_row[col_idx], row_idx, backtrack_counter, s_x, s_y)
+                tmp[col_idx] = self._coord_fill_helper(
+                    curr_row[col_idx], row_idx, backtrack_counter, s_x, s_y)
             row_buffer[buffer_end - row_idx] = tmp
         return row_buffer
 
@@ -132,9 +138,10 @@ class Model:
                 l_row.append(petri1[0:2])  # head l
                 l_row.append(petri1[3:5])  # head r
                 l_row.append(petri1[6:8])  # head c
-                l_row.append(petri1[9:11]) # tail
+                l_row.append(petri1[9:11])  # tail
                 l_row.append(petri1[12:14])  # rod
-                l_row_buffer = self._fill_missing_frames(l_row_buffer, l_row, l_conf_counter, l_start_row)
+                l_row_buffer = self._fill_missing_frames(
+                    l_row_buffer, l_row, l_conf_counter, l_start_row)
                 l_start_row = l_row[-5:]
                 l_conf_counter = 0
             else:
@@ -152,7 +159,8 @@ class Model:
                 r_row.append(petri2[6:8])
                 r_row.append(petri2[9:11])
                 r_row.append(petri2[12:14])
-                r_row_buffer = self._fill_missing_frames(r_row_buffer, r_row, r_conf_counter, r_start_row)
+                r_row_buffer = self._fill_missing_frames(
+                    r_row_buffer, r_row, r_conf_counter, r_start_row)
                 r_start_row = r_row[-5:]
                 r_conf_counter = 0
             else:
@@ -282,10 +290,14 @@ class Model:
                     row.append(left_fish['right_approach'])
                     row.append(round(left_fish['in_time']/self.FRAME_RATE, 2))
                     row.append(round(left_fish['out_time']/self.FRAME_RATE, 2))
-                    row.append(round(left_fish['in_facing_left']/self.FRAME_RATE, 2))
-                    row.append(round(left_fish['in_facing_right']/self.FRAME_RATE, 2))
-                    row.append(round(left_fish['out_facing_left']/self.FRAME_RATE, 2))
-                    row.append(round(left_fish['out_facing_right']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(left_fish['in_facing_left']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(left_fish['in_facing_right']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(left_fish['out_facing_left']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(left_fish['out_facing_right']/self.FRAME_RATE, 2))
                     row.append(petri1.loc['lhead_l'])  # head l
                     row.append(petri1.loc['lhead_r'])  # head r
                     row.append(petri1.loc['lhead_c'])  # head c
@@ -345,11 +357,16 @@ class Model:
                     row.append(right_fish['left_approach'])
                     row.append(right_fish['right_approach'])
                     row.append(round(right_fish['in_time']/self.FRAME_RATE, 2))
-                    row.append(round(right_fish['out_time']/self.FRAME_RATE, 2))
-                    row.append(round(right_fish['in_facing_left']/self.FRAME_RATE, 2))
-                    row.append(round(right_fish['in_facing_right']/self.FRAME_RATE, 2))
-                    row.append(round(right_fish['out_facing_left']/self.FRAME_RATE, 2))
-                    row.append(round(right_fish['out_facing_right']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(right_fish['out_time']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(right_fish['in_facing_left']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(right_fish['in_facing_right']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(right_fish['out_facing_left']/self.FRAME_RATE, 2))
+                    row.append(
+                        round(right_fish['out_facing_right']/self.FRAME_RATE, 2))
                     row.append(petri2.loc['rhead_l'])  # head l
                     row.append(petri2.loc['rhead_r'])  # head r
                     row.append(petri2.loc['rhead_c'])  # head c
@@ -363,48 +380,66 @@ class Model:
 
     def _quick_results(self, left_dict, right_dict):
         print('Left Petri Dish:')
-        print(f'\tTime spent in radius:\t\t\t\t{left_dict["in_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent inside with left size facing rod:\t{left_dict["in_facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent inside with right size facing rod:\t{left_dict["in_facing_right"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside of radius:\t\t\t{left_dict["out_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside with left size facing rod:\t{left_dict["out_facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside with right size facing rod:\t{left_dict["out_facing_right"]/self.FRAME_RATE}')
-        print(f'\tTimes approaching rod with left side:\t\t{left_dict["left_approach"]}')
-        print(f'\tTimes approaching rod with right side:\t\t{left_dict["right_approach"]}')
+        print(
+            f'\tTime spent in radius:\t\t\t\t{left_dict["in_time"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent inside with left size facing rod:\t{left_dict["in_facing_left"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent inside with right size facing rod:\t{left_dict["in_facing_right"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside of radius:\t\t\t{left_dict["out_time"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside with left size facing rod:\t{left_dict["out_facing_left"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside with right size facing rod:\t{left_dict["out_facing_right"]/self.FRAME_RATE}')
+        print(
+            f'\tTimes approaching rod with left side:\t\t{left_dict["left_approach"]}')
+        print(
+            f'\tTimes approaching rod with right side:\t\t{left_dict["right_approach"]}')
 
         print('Right Petri Dish:')
-        print(f'\tTime spent in radius:\t\t\t\t{right_dict["in_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent inside with left size facing rod:\t{right_dict["in_facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent inside with right size facing rod:\t{right_dict["in_facing_right"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside of radius:\t\t\t{right_dict["out_time"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside with left size facing rod:\t{right_dict["out_facing_left"]/self.FRAME_RATE}')
-        print(f'\tTime spent outside with right size facing rod:\t{right_dict["out_facing_right"]/self.FRAME_RATE}')
-        print(f'\tTimes approaching rod with left side:\t\t{right_dict["left_approach"]}')
-        print(f'\tTimes approaching rod with right side:\t\t{right_dict["right_approach"]}')
+        print(
+            f'\tTime spent in radius:\t\t\t\t{right_dict["in_time"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent inside with left size facing rod:\t{right_dict["in_facing_left"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent inside with right size facing rod:\t{right_dict["in_facing_right"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside of radius:\t\t\t{right_dict["out_time"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside with left size facing rod:\t{right_dict["out_facing_left"]/self.FRAME_RATE}')
+        print(
+            f'\tTime spent outside with right size facing rod:\t{right_dict["out_facing_right"]/self.FRAME_RATE}')
+        print(
+            f'\tTimes approaching rod with left side:\t\t{right_dict["left_approach"]}')
+        print(
+            f'\tTimes approaching rod with right side:\t\t{right_dict["right_approach"]}')
 
     def _add_to_summary_file(self, left_dict, right_dict, fname):
         lrow = {'Subject': f'{fname}_left',
-               'Duration in radius - left-facing': left_dict["in_facing_left"]/self.FRAME_RATE,
-               'Duration in radius - right-facing': left_dict["in_facing_right"]/self.FRAME_RATE,
-               'Duration outside radius - left-facing': left_dict["out_facing_left"]/self.FRAME_RATE,
-               'Duration outside radius - right-facing': left_dict["out_facing_right"]/self.FRAME_RATE,
-               'Left approaches': left_dict["left_approach"],
-               'Right approaches': left_dict["right_approach"]}
+                'Duration in radius - left-facing': left_dict["in_facing_left"]/self.FRAME_RATE,
+                'Duration in radius - right-facing': left_dict["in_facing_right"]/self.FRAME_RATE,
+                'Duration outside radius - left-facing': left_dict["out_facing_left"]/self.FRAME_RATE,
+                'Duration outside radius - right-facing': left_dict["out_facing_right"]/self.FRAME_RATE,
+                'Left approaches': left_dict["left_approach"],
+                'Right approaches': left_dict["right_approach"]}
         rrow = {'Subject': f'{fname}_right',
-               'Duration in radius - left-facing': right_dict["in_facing_left"]/self.FRAME_RATE,
-               'Duration in radius - right-facing': right_dict["in_facing_right"]/self.FRAME_RATE,
-               'Duration outside radius - left-facing': right_dict["out_facing_left"]/self.FRAME_RATE,
-               'Duration outside radius - right-facing': right_dict["out_facing_right"]/self.FRAME_RATE,
-               'Left approaches': right_dict["left_approach"],
-               'Right approaches': right_dict["right_approach"]}
+                'Duration in radius - left-facing': right_dict["in_facing_left"]/self.FRAME_RATE,
+                'Duration in radius - right-facing': right_dict["in_facing_right"]/self.FRAME_RATE,
+                'Duration outside radius - left-facing': right_dict["out_facing_left"]/self.FRAME_RATE,
+                'Duration outside radius - right-facing': right_dict["out_facing_right"]/self.FRAME_RATE,
+                'Left approaches': right_dict["left_approach"],
+                'Right approaches': right_dict["right_approach"]}
 
         self.sum_file = self.sum_file.append([lrow, rrow], ignore_index=True)
 
     def analyze_video(self, avi_file, del_video=False, del_results=True):
         if self.save_dir.endswith('/'):
-            result_dir = self.save_dir + ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
+            result_dir = self.save_dir + \
+                ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
         else:
-            result_dir = self.save_dir + '/' + ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
+            result_dir = self.save_dir + '/' + \
+                ''.join(os.path.basename(avi_file).split('.')[:-1]) + '/'
 
         if self.FRAME_FILE is not None and result_dir.split('/')[-2] not in self.FRAME_SNIPS.keys():
             print(f'Skipped video: {result_dir.split("/")[-2]}')
@@ -418,21 +453,29 @@ class Model:
             if avi_file.endswith('.avi'):
                 vid_file = self._resize_avi(avi_file, result_dir)
             else:
-                raise Exception('Unknown video format. Support is limited to tif or avi')
+                raise Exception(
+                    'Unknown video format. Support is limited to tif or avi')
 
             try:
-                deeplabcut.analyze_videos(self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
+                deeplabcut.analyze_videos(
+                    self.conf, [vid_file], destfolder=result_dir, save_as_csv=True)
             except:
-                print("Problem analyzing video. Check if config.yaml file was adjusted properly.")
-            deeplabcut.create_labeled_video(self.conf, [vid_file], destfolder=result_dir)
+                print(
+                    "Problem analyzing video. Check if config.yaml file was adjusted properly.")
+            deeplabcut.create_labeled_video(
+                self.conf, [vid_file], destfolder=result_dir)
 
-            result_file = result_dir + ''.join(os.path.basename(vid_file).split('.')[:-1]) + self.RESULT_POSTFIX
+            result_file = result_dir + \
+                ''.join(os.path.basename(vid_file).split(
+                    '.')[:-1]) + self.RESULT_POSTFIX
             results = pd.read_hdf(result_file, 'df_with_missing')
 
             filled_in_df = self._replace_low_conf(results)
-            left_results, right_results = self._get_metrics(filled_in_df, result_dir)
+            left_results, right_results = self._get_metrics(
+                filled_in_df, result_dir)
             self._quick_results(left_results, right_results)
-            self._add_to_summary_file(left_results, right_results, ''.join(os.path.basename(avi_file).split('.')[:-1]))
+            self._add_to_summary_file(left_results, right_results, ''.join(
+                os.path.basename(avi_file).split('.')[:-1]))
 
             if del_video:
                 os.remove(vid_file)
@@ -443,7 +486,8 @@ class Model:
 
 if __name__ == '__main__':
     # conf_file, save_dir, approach_radius
-    parser = argparse.ArgumentParser(description='Analyze cavefish behavior in tif files')
+    parser = argparse.ArgumentParser(
+        description='Analyze cavefish behavior in tif files')
 
     parser.add_argument(
         'approach_radius', type=int,
@@ -482,21 +526,26 @@ if __name__ == '__main__':
     if usr_args['video_folder']:
         for vid_path in [f for f in os.listdir(usr_args['video_folder'])]:
             if usr_args['video_folder'].endswith('/') or usr_args['video_folder'].endswith('\\'):
-                model.analyze_video(usr_args['video_folder'][:-1] + '/' + vid_path)
+                model.analyze_video(
+                    usr_args['video_folder'][:-1] + '/' + vid_path)
             else:
                 model.analyze_video(usr_args['video_folder'] + '/' + vid_path)
         if usr_args['save_dir'].endswith('\\') or usr_args['save_dir'].endswith('/'):
-            model.sum_file.to_csv(usr_args['save_dir']+'summary_results.csv', index=False)
+            model.sum_file.to_csv(
+                usr_args['save_dir']+'summary_results.csv', index=False)
         else:
-            model.sum_file.to_csv(usr_args['save_dir'] + '/summary_results.csv', index=False)
+            model.sum_file.to_csv(
+                usr_args['save_dir'] + '/summary_results.csv', index=False)
     else:
         while True:
             vid_path = input('Enter video path or press Ctrl+C to quit:')
             model.analyze_video(vid_path)
             if usr_args['save_dir'].endswith('\\') or usr_args['save_dir'].endswith('/'):
-                model.sum_file.to_csv(usr_args['save_dir']+'summary_results.csv', index=False)
+                model.sum_file.to_csv(
+                    usr_args['save_dir']+'summary_results.csv', index=False)
             else:
-                model.sum_file.to_csv(usr_args['save_dir'] + '/summary_results.csv', index=False)
+                model.sum_file.to_csv(
+                    usr_args['save_dir'] + '/summary_results.csv', index=False)
 
 
 # python RunModel.py 15 -f 10 -v C:/Users/yanni/Desktop/tm/testout/check_vids/ -s C:/Users/yanni/Desktop/tm/testout/ -x C:/Users/yanni/Desktop/tm/testout/frame_excl.txt

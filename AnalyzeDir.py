@@ -34,18 +34,20 @@ class BatchAnalyzer:
         with open(source, 'r') as f:
             for idx, line in enumerate(f):
                 # row specifying video name
-                if idx%3 == 0:
+                if idx % 3 == 0:
                     vname = line.strip()
                     self.FRAME_SNIPS[vname] = {'l_fish': None,
                                                'r_fish': None}
                 # row specifying left fish frames
-                elif (idx-1)%3 == 0:
+                elif (idx-1) % 3 == 0:
                     delin = line.split(' ')
-                    self.FRAME_SNIPS[vname]['l_fish'] = [int(delin[0]), int(delin[1])]
+                    self.FRAME_SNIPS[vname]['l_fish'] = [
+                        int(delin[0]), int(delin[1])]
 
-                elif (idx-2)%3 == 0:
+                elif (idx-2) % 3 == 0:
                     delin = line.split(' ')
-                    self.FRAME_SNIPS[vname]['r_fish'] = [int(delin[0]), int(delin[1])]
+                    self.FRAME_SNIPS[vname]['r_fish'] = [
+                        int(delin[0]), int(delin[1])]
 
     def _get_distance(self, x1, y1, x2, y2):
         return np.sqrt(np.square(x1-x2) + np.square(y1-y2)) / self.SIZE_RATIO
@@ -74,8 +76,10 @@ class BatchAnalyzer:
 
     @staticmethod
     def _coord_fill_helper(relative_coords, frame_idx, fill_length, start_x, start_y):
-        x = start_x + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[0]-start_x))
-        y = start_y + ((fill_length-frame_idx)/(fill_length+1) * (relative_coords[1]-start_y))
+        x = start_x + ((fill_length-frame_idx)/(fill_length+1)
+                       * (relative_coords[0]-start_x))
+        y = start_y + ((fill_length-frame_idx)/(fill_length+1)
+                       * (relative_coords[1]-start_y))
         return [x, y]
 
     def _fill_missing_frames(self, row_buffer, curr_row, backtrack_counter, start_row):
@@ -85,7 +89,8 @@ class BatchAnalyzer:
             for col_idx in range(-1, -6, -1):
                 s_x = start_row[col_idx][0]
                 s_y = start_row[col_idx][1]
-                tmp[col_idx] = self._coord_fill_helper(curr_row[col_idx], row_idx, backtrack_counter, s_x, s_y)
+                tmp[col_idx] = self._coord_fill_helper(
+                    curr_row[col_idx], row_idx, backtrack_counter, s_x, s_y)
             row_buffer[buffer_end - row_idx] = tmp
         return row_buffer
 
@@ -115,7 +120,8 @@ class BatchAnalyzer:
                 l_row.append(petri1[6:8])  # head c
                 l_row.append(petri1[9:11])  # tail
                 l_row.append(petri1[12:14])  # rod
-                l_row_buffer = self._fill_missing_frames(l_row_buffer, l_row, l_conf_counter, l_start_row)
+                l_row_buffer = self._fill_missing_frames(
+                    l_row_buffer, l_row, l_conf_counter, l_start_row)
                 l_start_row = l_row[-5:]
                 l_conf_counter = 0
             else:
@@ -133,7 +139,8 @@ class BatchAnalyzer:
                 r_row.append(petri2[6:8])
                 r_row.append(petri2[9:11])
                 r_row.append(petri2[12:14])
-                r_row_buffer = self._fill_missing_frames(r_row_buffer, r_row, r_conf_counter, r_start_row)
+                r_row_buffer = self._fill_missing_frames(
+                    r_row_buffer, r_row, r_conf_counter, r_start_row)
                 r_start_row = r_row[-5:]
                 r_conf_counter = 0
             else:
@@ -311,7 +318,8 @@ class BatchAnalyzer:
                 if self.FRAME_FILE is None or os.path.basename(vid_data).split('.')[0] in self.FRAME_SNIPS.keys():
                     vdata = pd.read_csv(vdata)
                     vdata = self._replace_low_conf(vdata)
-                    l_results, r_results = self._get_metrics(vdata, os.path.basename(vid_data).split('.')[0])
+                    l_results, r_results = self._get_metrics(
+                        vdata, os.path.basename(vid_data).split('.')[0])
 
                     l_row = {f'vid_fish': f'{vname}: Fish 1',
                              f'left_approaches({self.approach_radius})': l_results['left_approach'],
@@ -328,7 +336,8 @@ class BatchAnalyzer:
             if sum_df is None:
                 sum_df = rad_results.copy()
             else:
-                sum_df = sum_df.merge(rad_results.copy(), left_index=True, right_index=True, how='left', sort=False)
+                sum_df = sum_df.merge(
+                    rad_results.copy(), left_index=True, right_index=True, how='left', sort=False)
             assert not sum_df.isnull().values.any()  # check that same files were analyzed
 
             del rad_results
@@ -379,14 +388,3 @@ if __name__ == '__main__':
 
 
 # (venv) C:\Users\yanni\Desktop\tm\FishProject>python AnalyzeDir.py -r 1 30 -f 10 -d C:/Users/yanni/Desktop/tm/BulkResults -s ./
-
-
-
-
-
-
-
-
-
-
-

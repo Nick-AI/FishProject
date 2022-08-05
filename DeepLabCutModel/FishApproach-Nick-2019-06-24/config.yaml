@@ -4,83 +4,32 @@ scorer: Nick
 date: Jun24
 
 # Project path (change when moving around)
-project_path: C:/Users/yanni/Documents/Spring2019/FishProject/newVidVersion/FishProject/DeepLabCutModel/FishApproach-Nick-2019-06-24
+project_path: /home/user/path/to/project
 
 # Annotation data set configuration (and individual video cropping parameters)
+# example given below, replace.
 video_sets:
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish0102_resized.avi:
+  /home/user/path/to/video:
     crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish01Fish04_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish0304_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish0506_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish05Fish06_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish0708_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish07Fish09_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish08Fish25_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish0910_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish10Fish11_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish1112_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish12Fish13_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish1314_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish14Fish18_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish1516_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish15Fish21_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish16Fish17_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish1718_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish1920_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish19Fish20_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish2122_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish22Fish23_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish24Fish26_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish27Fish28_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish29_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish30Fish31_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish32_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish33Fish34_resized.avi:
-    crop: 0, 480, 0, 270
-  E:\FishProject\DeepLabCutNewVids\FishApproach-Nick-2019-06-24\videos\Fish35Fish36_resized.avi:
-    crop: 0, 480, 0, 270
+
 bodyparts:
-- Head1_L
-- Head1_R
-- Head1_C
-- Tail1
-- Rod1
-- Head2_L
-- Head2_R
-- Head2_C
-- Tail2
-- Rod2
+  - Head1_L
+  - Head1_R
+  - Head1_C
+  - Tail1
+  - Rod1
+  - Head2_L
+  - Head2_R
+  - Head2_C
+  - Tail2
+  - Rod2
 start: 0
 stop: 1
 numframes2pick: 8
+
 # Plotting configuration
+skeleton: []
+skeleton_color: black
 pcutoff: 0.1
 dotsize: 3
 alphavalue: 0.7
@@ -88,8 +37,8 @@ colormap: jet
 
 # Training,Evaluation and Analysis configuration
 TrainingFraction:
-- 0.95
-iteration: 0
+  - 0.95
+iteration: 7
 resnet: 50
 snapshotindex: -1
 batch_size: 4
@@ -104,6 +53,6 @@ y2: 624
 
 # Refinement configuration (parameters from annotation dataset configuration also relevant in this stage)
 corner2move2:
-- 50
-- 50
+  - 50
+  - 50
 move2corner: true

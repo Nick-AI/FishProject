@@ -10,17 +10,25 @@ A Mathis, alexander.mathis@bethgelab.org
 M Mathis, mackenzie@post.harvard.edu
 """
 
+# from skimage import io
+
+
+# ###########################################################################
+# Class for GUI MainFrame
+# ###########################################################################
+
+
+
+
 import sys
 import wx
 import os
 import pandas as pd
 import numpy as np
-# from skimage import io
 import PIL
 import glob
 import platform
 import wx.lib.scrolledpanel as SP
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colors as mcolors
@@ -29,24 +37,18 @@ import argparse
 import matplotlib
 from deeplabcut.utils import auxiliaryfunctions
 from skimage import io
-
 from pathlib import Path
 from deeplabcut.refine_training_dataset import auxfun_drag
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as NavigationToolbar
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-
-
-# ###########################################################################
-# Class for GUI MainFrame
-# ###########################################################################
 class ImagePanel(wx.Panel):
 
     def __init__(self, parent, config, gui_size, **kwargs):
         h = gui_size[0] / 2
         w = gui_size[1] / 3
-        wx.Panel.__init__(self, parent, -1, style=wx.SUNKEN_BORDER, size=(h, w))
+        wx.Panel.__init__(self, parent, -1,
+                          style=wx.SUNKEN_BORDER, size=(h, w))
 
         self.figure = matplotlib.figure.Figure()
         self.axes = self.figure.add_subplot(1, 1, 1)
@@ -65,13 +67,15 @@ class ImagePanel(wx.Panel):
         divider = make_axes_locatable(self.axes)
         colorIndex = np.linspace(np.min(im), np.max(im), len(bodyparts))
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        cbar = self.figure.colorbar(ax, cax=cax, spacing='proportional', ticks=colorIndex)
+        cbar = self.figure.colorbar(
+            ax, cax=cax, spacing='proportional', ticks=colorIndex)
         cbar.set_ticklabels(bodyparts[::-1])
         if preview == False:
             self.axes.set_title(str(str(itr) + "/" + str(len(index) - 1) + " " + str(
                 Path(index[itr]).stem) + " " + " Threshold chosen is: " + str("{0:.2f}".format(threshold))))
         else:
-            self.axes.set_title(str(str(itr) + "/" + str(len(index) - 1) + " " + str(Path(index[itr]).stem)))
+            self.axes.set_title(
+                str(str(itr) + "/" + str(len(index) - 1) + " " + str(Path(index[itr]).stem)))
         self.figure.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas)
         return (self.figure, self.axes, self.canvas, self.toolbar)
@@ -112,7 +116,8 @@ class ScrollPanel(SP.ScrolledPanel):
         self.slider = wx.Slider(self, -1, markersize, 1, markersize * 3, size=(250, -1),
                                 style=wx.SL_HORIZONTAL | wx.SL_AUTOTICKS | wx.SL_LABELS)
         self.slider.Enable(False)
-        self.checkBox = wx.CheckBox(self, id=wx.ID_ANY, label='Adjust marker size.')
+        self.checkBox = wx.CheckBox(
+            self, id=wx.ID_ANY, label='Adjust marker size.')
         self.choiceBox.Add(self.slider, 0, wx.ALL, 5)
         self.choiceBox.Add(self.checkBox, 0, wx.ALL, 5)
         self.SetSizerAndFit(self.choiceBox)
@@ -128,8 +133,10 @@ class MainFrame(wx.Frame):
 
     def __init__(self, parent, config):
         # Settting the GUI size and panels design
-        displays = (wx.Display(i) for i in range(wx.Display.GetCount()))  # Gets the number of displays
-        screenSizes = [display.GetGeometry().GetSize() for display in displays]  # Gets the size of each display
+        # Gets the number of displays
+        displays = (wx.Display(i) for i in range(wx.Display.GetCount()))
+        screenSizes = [display.GetGeometry().GetSize()
+                       for display in displays]  # Gets the size of each display
         index = 0  # For display 1.
         screenWidth = screenSizes[index][0]
         screenHeight = screenSizes[index][1]
@@ -142,7 +149,8 @@ class MainFrame(wx.Frame):
         self.statusbar.SetStatusText("")
         self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyPressed)
 
-        self.SetSizeHints(wx.Size(self.gui_size))  # This sets the minimum size of the GUI. It can scale now!
+        # This sets the minimum size of the GUI. It can scale now!
+        self.SetSizeHints(wx.Size(self.gui_size))
         ###################################################################################################################################################
 
         # Spliting the frame into top and bottom panels. Bottom panels contains the widgets. The top panel is for showing images and plotting!
@@ -154,10 +162,12 @@ class MainFrame(wx.Frame):
         self.choice_panel = ScrollPanel(vSplitter)
         #        self.choice_panel.SetupScrolling(scroll_x=True, scroll_y=True, scrollToTop=False)
         #        self.choice_panel.SetupScrolling(scroll_x=True, scrollToTop=False)
-        vSplitter.SplitVertically(self.image_panel, self.choice_panel, sashPosition=self.gui_size[0] * 0.8)
+        vSplitter.SplitVertically(
+            self.image_panel, self.choice_panel, sashPosition=self.gui_size[0] * 0.8)
         vSplitter.SetSashGravity(1)
         self.widget_panel = WidgetPanel(topSplitter)
-        topSplitter.SplitHorizontally(vSplitter, self.widget_panel, sashPosition=self.gui_size[1] * 0.83)  # 0.9
+        topSplitter.SplitHorizontally(
+            vSplitter, self.widget_panel, sashPosition=self.gui_size[1] * 0.83)  # 0.9
         topSplitter.SetSashGravity(1)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(topSplitter, 1, wx.EXPAND)
@@ -167,11 +177,13 @@ class MainFrame(wx.Frame):
         # Add Buttons to the WidgetPanel and bind them to their respective functions.
 
         widgetsizer = wx.WrapSizer(orient=wx.HORIZONTAL)
-        self.load = wx.Button(self.widget_panel, id=wx.ID_ANY, label="Load labels")
+        self.load = wx.Button(
+            self.widget_panel, id=wx.ID_ANY, label="Load labels")
         widgetsizer.Add(self.load, 1, wx.ALL, 15)
         self.load.Bind(wx.EVT_BUTTON, self.browseDir)
 
-        self.prev = wx.Button(self.widget_panel, id=wx.ID_ANY, label="<<Previous")
+        self.prev = wx.Button(
+            self.widget_panel, id=wx.ID_ANY, label="<<Previous")
         widgetsizer.Add(self.prev, 1, wx.ALL, 15)
         self.prev.Bind(wx.EVT_BUTTON, self.prevImage)
         self.prev.Enable(False)
@@ -198,7 +210,8 @@ class MainFrame(wx.Frame):
         self.widget_panel.SetSizer(widgetsizer)
         self.home.Enable(False)
 
-        self.pan = wx.ToggleButton(self.widget_panel, id=wx.ID_ANY, label="Pan")
+        self.pan = wx.ToggleButton(
+            self.widget_panel, id=wx.ID_ANY, label="Pan")
         widgetsizer.Add(self.pan, 1, wx.ALL, 15)
         self.pan.Bind(wx.EVT_TOGGLEBUTTON, self.panButton)
         self.widget_panel.SetSizer(widgetsizer)
@@ -320,15 +333,16 @@ class MainFrame(wx.Frame):
         Show the DirDialog and ask the user to change the directory where machine labels are stored
         """
 
-        self.statusbar.SetStatusText("Looking for a folder to start refining...")
+        self.statusbar.SetStatusText(
+            "Looking for a folder to start refining...")
         cwd = os.path.join(os.getcwd(), 'labeled-data')
         print(platform.system())
         if platform.system() == 'Darwin':
             dlg = wx.FileDialog(self, "Choose the machinelabels file for current iteration.", cwd, "",
-                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,wildcard="(*.h5)|*.h5")
+                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST, wildcard="(*.h5)|*.h5")
         else:
             dlg = wx.FileDialog(self, "Choose the machinelabels file for current iteration.", cwd, "",
-                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,wildcard="(*.h5)|*.h5")
+                                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST, wildcard="(*.h5)|*.h5")
 
         if dlg.ShowModal() == wx.ID_OK:
             self.data_file = dlg.GetPath()
@@ -352,7 +366,8 @@ class MainFrame(wx.Frame):
         except:
             print("No machinelabels file found!")
             self.Destroy()
-        self.statusbar.SetStatusText('Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
+        self.statusbar.SetStatusText(
+            'Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
         self.preview = True
         self.iter = 0
 
@@ -370,7 +385,8 @@ class MainFrame(wx.Frame):
 
             self.img = os.path.join(self.project_path, self.index[self.iter])
             img_name = Path(self.img).name
-            self.norm, self.colorIndex = self.image_panel.getColorIndices(self.img, self.bodyparts)
+            self.norm, self.colorIndex = self.image_panel.getColorIndices(
+                self.img, self.bodyparts)
             # Adding Slider and Checkbox
 
             self.choiceBox, self.slider, self.checkBox = self.choice_panel.addCheckBoxSlider(self.bodyparts, self.file,
@@ -398,7 +414,8 @@ class MainFrame(wx.Frame):
                 textBox.ShowModal()
                 self.threshold = float(textBox.GetValue())
                 textBox.Destroy()
-                self.img = os.path.join(self.project_path, self.index[self.iter])
+                self.img = os.path.join(
+                    self.project_path, self.index[self.iter])
                 img_name = Path(self.img).name
                 self.axes.clear()
                 self.preview = False
@@ -421,7 +438,8 @@ class MainFrame(wx.Frame):
                 MainFrame.saveEachImage(self)
 
         else:
-            msg = wx.MessageBox('No Machinelabels file found! Want to retry?', 'Error!', wx.YES_NO | wx.ICON_WARNING)
+            msg = wx.MessageBox(
+                'No Machinelabels file found! Want to retry?', 'Error!', wx.YES_NO | wx.ICON_WARNING)
             if msg == 2:
                 self.load.Enable(True)
                 self.next.Enable(False)
@@ -441,7 +459,8 @@ class MainFrame(wx.Frame):
         MainFrame.updateZoomPan(self)
 
         MainFrame.saveEachImage(self)
-        self.statusbar.SetStatusText('Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
+        self.statusbar.SetStatusText(
+            'Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
 
         self.iter = self.iter + 1
 
@@ -452,7 +471,8 @@ class MainFrame(wx.Frame):
 
             # Plotting
             self.axes.clear()
-            self.figure.delaxes(self.figure.axes[1])  # Removes the axes corresponding to the colorbar
+            # Removes the axes corresponding to the colorbar
+            self.figure.delaxes(self.figure.axes[1])
             self.figure, self.axes, self.canvas, self.toolbar = self.image_panel.drawplot(self.img, img_name, self.iter,
                                                                                           self.index, self.threshold,
                                                                                           self.bodyparts, self.colormap,
@@ -460,13 +480,15 @@ class MainFrame(wx.Frame):
 
             im = io.imread(self.img)
             if np.max(im) == 0:
-                msg = wx.MessageBox('Invalid image. Click Yes to remove', 'Error!', wx.YES_NO | wx.ICON_WARNING)
+                msg = wx.MessageBox(
+                    'Invalid image. Click Yes to remove', 'Error!', wx.YES_NO | wx.ICON_WARNING)
                 if msg == 2:
                     self.Dataframe = self.Dataframe.drop(self.index[self.iter])
                     self.index = list(self.Dataframe.iloc[:, 0].index)
                 self.iter = self.iter - 1
 
-                self.img = os.path.join(self.project_path, self.index[self.iter])
+                self.img = os.path.join(
+                    self.project_path, self.index[self.iter])
                 img_name = Path(self.img).name
 
                 self.figure, self.axes, self.canvas, self.toolbar = self.image_panel.drawplot(self.img, img_name,
@@ -491,7 +513,8 @@ class MainFrame(wx.Frame):
         # Checks if zoom/pan button is ON
         MainFrame.updateZoomPan(self)
 
-        self.statusbar.SetStatusText('Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
+        self.statusbar.SetStatusText(
+            'Working on folder: {}'.format(os.path.split(str(self.dir))[-1]))
         self.next.Enable(True)
         self.iter = self.iter - 1
 
@@ -507,7 +530,8 @@ class MainFrame(wx.Frame):
 
             # Plotting
             self.axes.clear()
-            self.figure.delaxes(self.figure.axes[1])  # Removes the axes corresponding to the colorbar
+            # Removes the axes corresponding to the colorbar
+            self.figure.delaxes(self.figure.axes[1])
             self.figure, self.axes, self.canvas, self.toolbar = self.image_panel.drawplot(self.img, img_name, self.iter,
                                                                                           self.index, self.threshold,
                                                                                           self.bodyparts, self.colormap,
@@ -523,7 +547,8 @@ class MainFrame(wx.Frame):
         Quits the GUI
         """
         self.statusbar.SetStatusText("")
-        dlg = wx.MessageDialog(None, "Are you sure?", "Quit!", wx.YES_NO | wx.ICON_WARNING)
+        dlg = wx.MessageDialog(None, "Are you sure?",
+                               "Quit!", wx.YES_NO | wx.ICON_WARNING)
         result = dlg.ShowModal()
         if result == wx.ID_YES:
             print(
@@ -560,7 +585,7 @@ class MainFrame(wx.Frame):
             for bpindex, bp in enumerate(self.bodyparts):
                 testCondition = self.Dataframe.loc[i, (self.scorer, bp, 'x')] > width or self.Dataframe.loc[
                     i, (self.scorer, bp, 'x')] < 0 or self.Dataframe.loc[i, (self.scorer, bp, 'y')] > height or \
-                                self.Dataframe.loc[i, (self.scorer, bp, 'y')] < 0
+                    self.Dataframe.loc[i, (self.scorer, bp, 'y')] < 0
                 if testCondition:
                     print("Found %s outside the image %s.Setting it to NaN" % (bp, i))
                     self.Dataframe.loc[i, (self.scorer, bp, 'x')] = np.nan
@@ -633,9 +658,9 @@ class MainFrame(wx.Frame):
         for bpindex, bp in enumerate(self.bodyparts):
             if self.updatedCoords[bpindex]:
                 self.Dataframe.loc[self.Dataframe.index[self.iter], (self.scorer, bp, 'x')] = \
-                self.updatedCoords[bpindex][-1][0]
+                    self.updatedCoords[bpindex][-1][0]
                 self.Dataframe.loc[self.Dataframe.index[self.iter], (self.scorer, bp, 'y')] = \
-                self.updatedCoords[bpindex][-1][1]
+                    self.updatedCoords[bpindex][-1][1]
 
     def getLabels(self, img_index):
         """
@@ -686,7 +711,8 @@ class MainFrame(wx.Frame):
                                          alpha=self.alpha)]
 
             self.axes.add_patch(circle[0])
-            self.dr = auxfun_drag.DraggablePoint(circle[0], bp, self.likelihood)
+            self.dr = auxfun_drag.DraggablePoint(
+                circle[0], bp, self.likelihood)
             self.dr.connect()
             self.dr.coords = MainFrame.getLabels(self, self.iter)[bpindex]
             self.drs.append(self.dr)
@@ -705,7 +731,7 @@ class MainFrame(wx.Frame):
 
 def _show(config):
     app = wx.App()
-    frame = MainFrame(None,config).Show()
+    frame = MainFrame(None, config).Show()
     app.MainLoop()
 
 
