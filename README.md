@@ -20,3 +20,5 @@ Project analyzing videos of cave fish approaching vibrating rod in a petri dish 
 - wxPython
 - tensorflow
 - numpy==1.16.3
+
+[![DOI](https://zenodo.org/badge/186560317.svg)](https://zenodo.org/badge/latestdoi/186560317)
